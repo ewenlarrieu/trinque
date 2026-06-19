@@ -1,0 +1,97 @@
+/* TRINQUE — Global styles entry point.
+   Tailwind v4: @import "tailwindcss" replaces the old directives.
+   @theme maps design tokens to Tailwind utility classes. */
+
+@import "tailwindcss";
+
+/* Fonts */
+@import "./tokens/fonts.css";
+
+/* TRINQUE design tokens (CSS custom properties on :root) */
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/effects.css";
+@import "./base/reset.css";
+
+/* ── Tailwind v4 theme ────────────────────────────────────────────────────
+   Maps TRINQUE tokens to Tailwind utility class namespaces:
+     --color-*   → bg-*, text-*, border-*, ring-*, etc.
+     --font-*    → font-display, font-body, font-mono
+     --text-*    → text-sm, text-2xl, etc.  (font-size)
+     --radius-*  → rounded-sm, rounded-pill, etc.
+   ─────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Brand vivids */
+  --color-violet-100: #EFE3FF;
+  --color-violet-300: #C9A0FF;
+  --color-violet-500: #9B4DFF;
+  --color-violet-600: #8A2BE2;
+  --color-violet-700: #6B1FB0;
+
+  --color-rose-100: #FFE0F0;
+  --color-rose-300: #FF9CCB;
+  --color-rose-500: #FF4D9D;
+  --color-rose-600: #E62E82;
+
+  --color-jaune-100: #FFF6D6;
+  --color-jaune-300: #FFE588;
+  --color-jaune-500: #FFD23F;
+  --color-jaune-600: #F5B800;
+
+  --color-orange-100: #FFE7D6;
+  --color-orange-300: #FFB07A;
+  --color-orange-500: #FF7A1A;
+  --color-orange-600: #E85D00;
+
+  /* Night-violet neutrals */
+  --color-night-900: #100620;
+  --color-night-800: #160A2A;
+  --color-night-700: #211142;
+  --color-night-600: #2D1857;
+  --color-night-500: #3D2270;
+  --color-night-400: #5A3D8C;
+
+  /* Ink (text on dark) */
+  --color-ink-100: #FFFFFF;
+  --color-ink-200: #ECE3FF;
+  --color-ink-300: #C9B8E8;
+  --color-ink-400: #9A86C4;
+  --color-ink-500: #6E5B98;
+
+  /* Card faces */
+  --color-paper: #FFFDF7;
+  --color-paper-shade: #F1E9DC;
+  --color-suit-red: #FF335F;
+  --color-suit-black: #1B1030;
+
+  /* Status */
+  --color-success: #2BD98C;
+  --color-danger: #FF4D6A;
+
+  /* Font families */
+  --font-display: 'Fredoka', 'Outfit', system-ui, sans-serif;
+  --font-body: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  /* Type scale (overrides Tailwind defaults) */
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+  --text-4xl: 48px;
+  --text-5xl: 64px;
+  --text-6xl: 84px;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
+  --radius-pill: 999px;
+}

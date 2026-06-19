@@ -1,0 +1,30 @@
+/* TRINQUE — Shadows, glows, motion.
+   On a dark canvas we lean on colored glows rather than soft gray drop shadows. */
+
+:root {
+  /* Elevation on dark = ambient depth + subtle inner light */
+  --shadow-card: 0 12px 32px -8px rgba(0, 0, 0, 0.55);
+  --shadow-raised: 0 8px 24px -10px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 20px 48px -12px rgba(0, 0, 0, 0.6);
+
+  /* Colored glows for vivid CTAs and active states */
+  --glow-violet: 0 8px 28px -6px rgba(155, 77, 255, 0.55);
+  --glow-rose: 0 8px 28px -6px rgba(255, 77, 157, 0.55);
+  --glow-jaune: 0 8px 28px -6px rgba(255, 210, 63, 0.5);
+  --glow-orange: 0 8px 28px -6px rgba(255, 122, 26, 0.5);
+
+  /* The light playing card sitting on dark */
+  --shadow-playcard: 0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255,255,255,0.04);
+
+  /* Hairline inner light to lift surfaces off the black */
+  --ring-inner: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* Motion */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+  --dur-flip: 600ms;
+}

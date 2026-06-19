@@ -1,0 +1,6 @@
+/* TRINQUE — Webfonts.
+   Fonts are loaded via <link> in index.html (preconnect + stylesheet) for
+   correct CSS import order. If you move to a CSS-only setup, put this
+   @import as the very first line of styles.css before any other rules.
+
+   @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap'); */

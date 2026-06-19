@@ -1,0 +1,77 @@
+/* TRINQUE — Color system
+   Festive party palette: violet, rose, jaune, orange on a deep night-violet base.
+   Base ramps + semantic aliases. */
+
+:root {
+  /* ---- Brand vivids ---- */
+  --violet-100: #EFE3FF;
+  --violet-300: #C9A0FF;
+  --violet-500: #9B4DFF;  /* primary */
+  --violet-600: #8A2BE2;
+  --violet-700: #6B1FB0;
+
+  --rose-100: #FFE0F0;
+  --rose-300: #FF9CCB;
+  --rose-500: #FF4D9D;  /* secondary */
+  --rose-600: #E62E82;
+
+  --jaune-100: #FFF6D6;
+  --jaune-300: #FFE588;
+  --jaune-500: #FFD23F;  /* accent / highlight */
+  --jaune-600: #F5B800;
+
+  --orange-100: #FFE7D6;
+  --orange-300: #FFB07A;
+  --orange-500: #FF7A1A;  /* warm accent */
+  --orange-600: #E85D00;
+
+  /* ---- Night-violet neutrals (the canvas) ---- */
+  --night-900: #100620;  /* app background, deepest */
+  --night-800: #160A2A;  /* page background */
+  --night-700: #211142;  /* raised surface */
+  --night-600: #2D1857;  /* card surface */
+  --night-500: #3D2270;  /* border / hairline */
+  --night-400: #5A3D8C;  /* muted strokes */
+
+  /* ---- Ink (text on dark) ---- */
+  --ink-100: #FFFFFF;
+  --ink-200: #ECE3FF;  /* primary text */
+  --ink-300: #C9B8E8;  /* secondary text */
+  --ink-400: #9A86C4;  /* tertiary / placeholder */
+  --ink-500: #6E5B98;  /* disabled */
+
+  /* ---- Card faces (the playing cards are light) ---- */
+  --paper: #FFFDF7;
+  --paper-shade: #F1E9DC;
+  --suit-red: #FF335F;
+  --suit-black: #1B1030;
+
+  /* ---- Semantic aliases ---- */
+  --bg-app: var(--night-900);
+  --bg-page: var(--night-800);
+  --surface-raised: var(--night-700);
+  --surface-card: var(--night-600);
+  --border-hairline: var(--night-500);
+  --border-strong: var(--night-400);
+
+  --text-primary: var(--ink-200);
+  --text-secondary: var(--ink-300);
+  --text-tertiary: var(--ink-400);
+  --text-on-vivid: #1B0A33;     /* dark ink on yellow/light fills */
+  --text-on-violet: #FFFFFF;
+
+  --color-primary: var(--violet-500);
+  --color-secondary: var(--rose-500);
+  --color-accent: var(--jaune-500);
+  --color-warm: var(--orange-500);
+
+  --color-success: #2BD98C;
+  --color-danger: #FF4D6A;
+
+  /* ---- Festive gradients ---- */
+  --grad-party: linear-gradient(120deg, var(--violet-500) 0%, var(--rose-500) 50%, var(--orange-500) 100%);
+  --grad-violet-rose: linear-gradient(135deg, var(--violet-500) 0%, var(--rose-500) 100%);
+  --grad-rose-orange: linear-gradient(135deg, var(--rose-500) 0%, var(--orange-500) 100%);
+  --grad-sun: linear-gradient(135deg, var(--jaune-500) 0%, var(--orange-500) 100%);
+  --grad-night: radial-gradient(120% 90% at 50% 0%, #2A1356 0%, var(--night-900) 70%);
+}
