@@ -1,23 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { Play } from 'lucide-react'
-import { useGameStore, type Player } from '../store/game'
+import { useGameStore } from '../store/game'
 import { Backdrop } from '../components/ui/Backdrop'
 import { Header } from '../components/ui/Header'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { GameCode } from '../components/ui/GameCode'
 import { PlayerChip } from '../components/ui/PlayerChip'
-
-// ─── Démo : simuler des joueurs sans backend ──────────────────────────────────
-// Passe à false pour n'afficher que les vrais joueurs du store.
-const MOCK_PLAYERS = true
-
-const MOCK: Player[] = [
-  { id: 'mock-1', pseudo: 'Marion', isHost: false },
-  { id: 'mock-2', pseudo: 'Léo',    isHost: false },
-  { id: 'mock-3', pseudo: 'Sacha',  isHost: false },
-  { id: 'mock-4', pseudo: 'Inès',   isHost: false },
-]
 
 export default function Lobby() {
   const gameCode    = useGameStore((s) => s.gameCode)
@@ -27,11 +16,6 @@ export default function Lobby() {
   const navigate    = useNavigate()
 
   const isHost = players.some((p) => p.id === myPlayerId && p.isHost)
-
-  // Displayed list: real players first, then mocks (if flag on)
-  const allPlayers: Player[] = MOCK_PLAYERS
-    ? [...players, ...MOCK]
-    : players
 
   const handleStart = () => {
     startGame()
@@ -103,7 +87,7 @@ export default function Lobby() {
               Dans la place
             </span>
             <Badge tone="violet">
-              {allPlayers.length} joueur{allPlayers.length > 1 ? 's' : ''}
+              {players.length} joueur{players.length > 1 ? 's' : ''}
             </Badge>
           </div>
 
@@ -117,7 +101,7 @@ export default function Lobby() {
               flex: 1,
             }}
           >
-            {allPlayers.map((p) => (
+            {players.map((p) => (
               <PlayerChip
                 key={p.id}
                 name={p.pseudo}

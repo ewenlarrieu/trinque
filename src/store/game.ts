@@ -8,6 +8,16 @@ export interface Player {
   isHost: boolean
 }
 
+// Passe à false pour jouer sans joueurs fictifs
+export const MOCK_PLAYERS = true
+
+const MOCK: Player[] = [
+  { id: 'mock-1', pseudo: 'Marion', isHost: false },
+  { id: 'mock-2', pseudo: 'Léo',    isHost: false },
+  { id: 'mock-3', pseudo: 'Sacha',  isHost: false },
+  { id: 'mock-4', pseudo: 'Inès',   isHost: false },
+]
+
 interface GameState {
   gameCode: string | null
   hostId: string | null
@@ -44,7 +54,7 @@ export const useGameStore = create<GameState>()(
           gameCode: code,
           hostId,
           myPlayerId: hostId,
-          players: [host],
+          players: MOCK_PLAYERS ? [host, ...MOCK] : [host],
           deck: [],
           drawnCard: null,
           currentTurnIndex: 0,
