@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, User, ArrowRight } from 'lucide-react'
+import { Plus, User } from 'lucide-react'
 import { useGameStore } from '../store/game'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -45,6 +45,8 @@ export default function Accueil() {
     <div
       style={{
         minHeight: '100dvh',
+        width: '100%',
+        overflowX: 'hidden',
         background: 'var(--grad-night)',
         position: 'relative',
         display: 'flex',
@@ -165,20 +167,19 @@ export default function Accueil() {
           </Button>
 
           {/* Join row */}
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, minWidth: 0 }}>
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               variant="code"
               placeholder="CODE"
               maxLength={6}
-              containerStyle={{ flex: 1 }}
+              containerStyle={{ flex: 1, minWidth: 0 }}
             />
             <Button
               variant="secondary"
               size="md"
               disabled={!canJoin}
-              iconRight={<ArrowRight size={18} />}
               onClick={handleJoin}
             >
               Rejoindre
