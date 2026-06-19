@@ -26,6 +26,8 @@ interface GameState {
   currentTurnIndex: number
   deck: Card[]
   drawnCard: Card | null
+  drawnCount: number                  // total cartes piochées dans la partie
+  drawCounts: Record<string, number>  // nb cartes par playerId
 
   createGame: (pseudo: string) => void
   joinGame: (code: string, pseudo: string) => void
@@ -45,6 +47,8 @@ export const useGameStore = create<GameState>()(
       currentTurnIndex: 0,
       deck: [],
       drawnCard: null,
+      drawnCount: 0,
+      drawCounts: {},
 
       createGame: (pseudo) => {
         const code = Math.random().toString(36).slice(2, 8).toUpperCase()
@@ -72,14 +76,22 @@ export const useGameStore = create<GameState>()(
       },
 
       startGame: () => {
-        set({ deck: freshDeck(), currentTurnIndex: 0, drawnCard: null })
+        set({ deck: freshDeck(), currentTurnIndex: 0, drawnCard: null, drawnCount: 0, drawCounts: {} })
       },
 
       drawCard: () => {
-        const { deck } = get()
+        const { deck, players, currentTurnIndex } = get()
         if (deck.length === 0) return
         const [drawnCard, ...remaining] = deck
-        set({ drawnCard, deck: remaining })
+        const pid = players[currentTurnIndex]?.id
+        set((state) => ({
+          drawnCard,
+          deck: remaining,
+          drawnCount: state.drawnCount + 1,
+          drawCounts: pid
+            ? { ...state.drawCounts, [pid]: (state.drawCounts[pid] ?? 0) + 1 }
+            : state.drawCounts,
+        }))
       },
 
       nextTurn: () => {
@@ -99,6 +111,8 @@ export const useGameStore = create<GameState>()(
           currentTurnIndex: 0,
           deck: [],
           drawnCard: null,
+          drawnCount: 0,
+          drawCounts: {},
         })
       },
     }),
@@ -112,6 +126,8 @@ export const useGameStore = create<GameState>()(
         currentTurnIndex: state.currentTurnIndex,
         deck: state.deck,
         drawnCard: state.drawnCard,
+        drawnCount: state.drawnCount,
+        drawCounts: state.drawCounts,
       }),
     }
   )

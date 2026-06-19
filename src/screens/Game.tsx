@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Dices, RotateCcw } from 'lucide-react'
+import { Dices, Trophy } from 'lucide-react'
 import { useGameStore } from '../store/game'
 import { ruleFor } from '../data/deck'
 import { Backdrop } from '../components/ui/Backdrop'
@@ -10,6 +11,7 @@ import { MuteButton } from '../components/ui/MuteButton'
 import { Avatar } from '../components/ui/Avatar'
 import { PlayingCard } from '../components/ui/PlayingCard'
 import RevealedCard from './RevealedCard'
+import FinDePartie from './FinDePartie'
 import { unlockAudio, playSound } from '../audio/soundService'
 
 export default function Game() {
@@ -20,8 +22,11 @@ export default function Game() {
   const drawnCard       = useGameStore((s) => s.drawnCard)
   const drawCard        = useGameStore((s) => s.drawCard)
   const nextTurn        = useGameStore((s) => s.nextTurn)
+  const startGame       = useGameStore((s) => s.startGame)
   const resetGame       = useGameStore((s) => s.resetGame)
   const navigate        = useNavigate()
+
+  const [showFin, setShowFin] = useState(false)
 
   const currentPlayer   = players[currentTurnIdx % Math.max(players.length, 1)]
   const deckEmpty       = deck.length === 0 && drawnCard === null
@@ -31,7 +36,15 @@ export default function Game() {
     drawCard()
   }
 
+  // Depuis FinDePartie : rejouer avec les mêmes joueurs, même code
   const handleReplay = () => {
+    playSound('start')
+    startGame()
+    setShowFin(false)
+  }
+
+  // Depuis FinDePartie : tout quitter
+  const handleQuit = () => {
     resetGame()
     navigate('/')
   }
@@ -227,13 +240,13 @@ export default function Game() {
         <div style={{ position: 'relative', paddingTop: 8 }}>
           {deckEmpty ? (
             <Button
-              variant="ghost"
+              variant="party"
               size="lg"
               block
-              iconLeft={<RotateCcw size={20} />}
-              onClick={handleReplay}
+              iconLeft={<Trophy size={20} />}
+              onClick={() => setShowFin(true)}
             >
-              Rejouer
+              Voir le récap
             </Button>
           ) : (
             <Button
@@ -249,13 +262,18 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Revealed card overlay — mounted when a card has been drawn */}
+      {/* Revealed card overlay */}
       {drawnCard && (
         <RevealedCard
           card={drawnCard}
           rule={ruleFor(drawnCard)}
           onNext={nextTurn}
         />
+      )}
+
+      {/* Écran de fin */}
+      {showFin && (
+        <FinDePartie onReplay={handleReplay} onQuit={handleQuit} />
       )}
     </div>
   )
