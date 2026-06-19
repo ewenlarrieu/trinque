@@ -11,6 +11,7 @@ export interface Player {
 interface GameState {
   gameCode: string | null
   hostId: string | null
+  myPlayerId: string | null
   players: Player[]
   currentTurnIndex: number
   deck: Card[]
@@ -29,6 +30,7 @@ export const useGameStore = create<GameState>()(
     (set, get) => ({
       gameCode: null,
       hostId: null,
+      myPlayerId: null,
       players: [],
       currentTurnIndex: 0,
       deck: [],
@@ -38,13 +40,23 @@ export const useGameStore = create<GameState>()(
         const code = Math.random().toString(36).slice(2, 8).toUpperCase()
         const hostId = crypto.randomUUID()
         const host: Player = { id: hostId, pseudo, isHost: true }
-        set({ gameCode: code, hostId, players: [host], deck: [], drawnCard: null, currentTurnIndex: 0 })
+        set({
+          gameCode: code,
+          hostId,
+          myPlayerId: hostId,
+          players: [host],
+          deck: [],
+          drawnCard: null,
+          currentTurnIndex: 0,
+        })
       },
 
       joinGame: (code, pseudo) => {
-        const newPlayer: Player = { id: crypto.randomUUID(), pseudo, isHost: false }
+        const id = crypto.randomUUID()
+        const newPlayer: Player = { id, pseudo, isHost: false }
         set((state) => ({
           gameCode: code,
+          myPlayerId: id,
           players: [...state.players, newPlayer],
         }))
       },
@@ -69,7 +81,15 @@ export const useGameStore = create<GameState>()(
       },
 
       resetGame: () => {
-        set({ gameCode: null, hostId: null, players: [], currentTurnIndex: 0, deck: [], drawnCard: null })
+        set({
+          gameCode: null,
+          hostId: null,
+          myPlayerId: null,
+          players: [],
+          currentTurnIndex: 0,
+          deck: [],
+          drawnCard: null,
+        })
       },
     }),
     {
@@ -77,6 +97,7 @@ export const useGameStore = create<GameState>()(
       partialize: (state) => ({
         gameCode: state.gameCode,
         hostId: state.hostId,
+        myPlayerId: state.myPlayerId,
         players: state.players,
         currentTurnIndex: state.currentTurnIndex,
         deck: state.deck,
