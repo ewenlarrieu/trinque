@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Dices, Trophy } from 'lucide-react'
+import { Dices } from 'lucide-react'
 import { useGameStore } from '../store/game'
 import { ruleFor } from '../data/deck'
 import { Backdrop } from '../components/ui/Backdrop'
@@ -20,13 +19,10 @@ export default function Game() {
   const currentTurnIdx  = useGameStore((s) => s.currentTurnIndex)
   const deck            = useGameStore((s) => s.deck)
   const drawnCard       = useGameStore((s) => s.drawnCard)
+  const drawnCount      = useGameStore((s) => s.drawnCount)
   const drawCard        = useGameStore((s) => s.drawCard)
   const nextTurn        = useGameStore((s) => s.nextTurn)
-  const startGame       = useGameStore((s) => s.startGame)
-  const resetGame       = useGameStore((s) => s.resetGame)
   const navigate        = useNavigate()
-
-  const [showFin, setShowFin] = useState(false)
 
   const currentPlayer   = players[currentTurnIdx % Math.max(players.length, 1)]
   const deckEmpty       = deck.length === 0 && drawnCard === null
@@ -34,19 +30,6 @@ export default function Game() {
   const handleDraw = () => {
     if (deckEmpty) return
     drawCard()
-  }
-
-  // Depuis FinDePartie : rejouer avec les mêmes joueurs, même code
-  const handleReplay = () => {
-    playSound('start')
-    startGame()
-    setShowFin(false)
-  }
-
-  // Depuis FinDePartie : tout quitter
-  const handleQuit = () => {
-    resetGame()
-    navigate('/')
   }
 
   return (
@@ -236,19 +219,9 @@ export default function Game() {
           )}
         </div>
 
-        {/* Bottom CTA */}
-        <div style={{ position: 'relative', paddingTop: 8 }}>
-          {deckEmpty ? (
-            <Button
-              variant="party"
-              size="lg"
-              block
-              iconLeft={<Trophy size={20} />}
-              onClick={() => setShowFin(true)}
-            >
-              Voir le récap
-            </Button>
-          ) : (
+        {/* Bottom CTA — masqué quand le deck est vide (FinDePartie prend le relais) */}
+        {!deckEmpty && (
+          <div style={{ position: 'relative', paddingTop: 8 }}>
             <Button
               variant="accent"
               size="lg"
@@ -258,8 +231,8 @@ export default function Game() {
             >
               Piocher une carte
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Revealed card overlay */}
@@ -271,10 +244,8 @@ export default function Game() {
         />
       )}
 
-      {/* Écran de fin */}
-      {showFin && (
-        <FinDePartie onReplay={handleReplay} onQuit={handleQuit} />
-      )}
+      {/* Écran de fin — auto-déclenché quand toutes les cartes sont piochées */}
+      {deckEmpty && drawnCount > 0 && <FinDePartie />}
     </div>
   )
 }

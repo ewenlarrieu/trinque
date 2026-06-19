@@ -1,13 +1,12 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { RotateCcw, LogOut } from 'lucide-react'
 import { useGameStore } from '../store/game'
 import { Backdrop } from '../components/ui/Backdrop'
 import { Button } from '../components/ui/Button'
-import { Avatar } from '../components/ui/Avatar'
-import { Card as CardPanel } from '../components/ui/Card'
 import { useSound } from '../audio/useSound'
 
-// ── Confetti (suit glyphs tombants) ──────────────────────────────────────────
+// ── Confetti ──────────────────────────────────────────────────────────────────
 
 if (typeof document !== 'undefined' && !document.getElementById('trinque-confetti')) {
   const s = document.createElement('style')
@@ -29,14 +28,13 @@ const COLORS = [
   'var(--jaune-500)',  'var(--orange-500)',
 ]
 
-// Positions déterministes (pas de Math.random() → stable entre renders)
-const PIECES = Array.from({ length: 24 }, (_, i) => ({
+const PIECES = Array.from({ length: 26 }, (_, i) => ({
   suit:     SUITS[i % 4],
   color:    COLORS[i % 4],
-  left:     `${3 + (i * 4.1) % 94}%`,
-  size:     14 + (i % 3) * 7,
-  delay:    `${(i * 0.085).toFixed(2)}s`,
-  duration: `${(1.1 + (i % 5) * 0.17).toFixed(2)}s`,
+  left:     `${2 + (i * 3.8) % 94}%`,
+  size:     13 + (i % 3) * 7,
+  delay:    `${(i * 0.08).toFixed(2)}s`,
+  duration: `${(1.0 + (i % 5) * 0.18).toFixed(2)}s`,
 }))
 
 const reducedMotion =
@@ -68,65 +66,41 @@ function Confetti() {
   )
 }
 
-// ── Stat helper ───────────────────────────────────────────────────────────────
+// ── Phrases ───────────────────────────────────────────────────────────────────
 
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-      <span
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize:   'var(--text-3xl)',
-          color:      'var(--text-primary)',
-          lineHeight: 1,
-        }}
-      >
-        {value}
-      </span>
-      <span
-        style={{
-          fontFamily: 'var(--font-body)',
-          fontSize:   'var(--text-xs)',
-          color:      'var(--text-tertiary)',
-          textAlign:  'center',
-        }}
-      >
-        {label}
-      </span>
-    </div>
-  )
-}
+const PHRASES = [
+  'La soirée ne fait que commencer… 🎶',
+  'Qui ramène les verres ?',
+  'On remet ça ? 🎲',
+  'Hydratez-vous (avec de l\'eau aussi) 💧',
+  'Vous avez tous survécu. Respect. 🍻',
+  'La légende de ce soir s\'écrit ici.',
+  'Personne n\'a vraiment perdu ce soir. 🤷',
+  'Le deck est vide, les verres aussi ?',
+]
 
-// ── FinDePartie ───────────────────────────────────────────────────────────────
+// ── Écran ─────────────────────────────────────────────────────────────────────
 
-interface FinDePartieProps {
-  onReplay: () => void  // startGame() → repart avec les mêmes joueurs
-  onQuit:   () => void  // resetGame() → retour Accueil
-}
+export default function FinDePartie() {
+  const gameCode  = useGameStore((s) => s.gameCode)
+  const resetGame = useGameStore((s) => s.resetGame)
+  const navigate  = useNavigate()
+  const { play }  = useSound()
 
-export default function FinDePartie({ onReplay, onQuit }: FinDePartieProps) {
-  const players    = useGameStore((s) => s.players)
-  const drawnCount = useGameStore((s) => s.drawnCount)
-  const drawCounts = useGameStore((s) => s.drawCounts)
-  const { play }   = useSound()
-
-  useEffect(() => { play('special') }, [])  // fanfare à l'arrivée
-
-  // Classement décroissant par cartes piochées
-  const ranked = [...players].sort(
-    (a, b) => (drawCounts[b.id] ?? 0) - (drawCounts[a.id] ?? 0),
+  const [phrase] = useState(
+    () => PHRASES[Math.floor(Math.random() * PHRASES.length)],
   )
 
-  const maxCount = drawCounts[ranked[0]?.id] ?? 0
-  const mvpList  = ranked.filter((p) => (drawCounts[p.id] ?? 0) === maxCount && maxCount > 0)
+  useEffect(() => { play('special') }, [])
 
-  const mvpMsg =
-    mvpList.length === 0
-      ? 'Tout le monde a joué pareil 🍻'
-      : mvpList.length > 1
-        ? `Égalité entre ${mvpList.map((p) => p.pseudo).join(' & ')} 🍻`
-        : `${mvpList[0].pseudo} a pioché le plus — ${maxCount} carte${maxCount > 1 ? 's' : ''} !`
+  const handleReplay = () => {
+    navigate(`/lobby/${gameCode}`)
+  }
+
+  const handleQuit = () => {
+    resetGame()
+    navigate('/')
+  }
 
   return (
     <div
@@ -138,7 +112,7 @@ export default function FinDePartie({ onReplay, onQuit }: FinDePartieProps) {
         justifyContent: 'center',
         zIndex:     50,
         overflowX:  'hidden',
-        overflowY:  'auto',
+        overflowY:  'hidden',
       }}
     >
       <Backdrop />
@@ -146,148 +120,85 @@ export default function FinDePartie({ onReplay, onQuit }: FinDePartieProps) {
 
       <div
         style={{
-          position:       'relative',
-          width:          '100%',
-          maxWidth:       'var(--screen-max)',
-          display:        'flex',
-          flexDirection:  'column',
-          padding:        '54px var(--gutter) 24px',
-          minHeight:      '100dvh',
-          zIndex:         2,
+          position:      'relative',
+          width:         '100%',
+          maxWidth:      'var(--screen-max)',
+          display:       'flex',
+          flexDirection: 'column',
+          alignItems:    'center',
+          justifyContent:'center',
+          padding:       '54px var(--gutter) 24px',
+          minHeight:     '100dvh',
+          zIndex:        2,
+          textAlign:     'center',
+          gap:           20,
         }}
       >
-        {/* ── Titre ── */}
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 52, lineHeight: 1, marginBottom: 10 }}>🏆</div>
-          <h1
-            style={{
-              margin:     0,
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              fontSize:   'var(--text-4xl)',
-              lineHeight: 1.0,
-              background: 'var(--grad-party)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color:      'transparent',
-              textTransform: 'uppercase',
-              letterSpacing: '0.03em',
-            }}
-          >
-            Partie<br />terminée !
-          </h1>
-        </div>
+        {/* Trophée */}
+        <div style={{ fontSize: 72, lineHeight: 1 }}>🏆</div>
 
-        {/* ── Stats globales ── */}
-        <CardPanel style={{ marginBottom: 20 }} padding="var(--space-5)">
-          <div style={{ display: 'flex', justifyContent: 'space-around', gap: 8 }}>
-            <Stat value={drawnCount} label="cartes piochées" />
-            <div style={{ width: 1, background: 'var(--border-hairline)' }} />
-            <Stat value={players.length} label={`joueur${players.length > 1 ? 's' : ''}`} />
-          </div>
-        </CardPanel>
-
-        {/* ── Classement ── */}
-        <p
+        {/* Titre festif */}
+        <h1
           style={{
-            margin:        '0 0 10px',
+            margin:        0,
             fontFamily:    'var(--font-display)',
             fontWeight:    700,
-            fontSize:      'var(--text-sm)',
-            letterSpacing: '0.12em',
+            fontSize:      'var(--text-5xl)',
+            lineHeight:    0.95,
+            background:    'var(--grad-party)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip:'text',
+            color:         'transparent',
             textTransform: 'uppercase',
-            color:         'var(--text-tertiary)',
+            letterSpacing: '0.02em',
           }}
         >
-          Classement
+          Partie<br />terminée !
+        </h1>
+
+        {/* Phrase aléatoire */}
+        <p
+          style={{
+            margin:     0,
+            fontFamily: 'var(--font-body)',
+            fontWeight: 500,
+            fontSize:   'var(--text-lg)',
+            color:      'var(--text-secondary)',
+            lineHeight: 1.4,
+            maxWidth:   280,
+          }}
+        >
+          {phrase}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-          {ranked.map((p, idx) => {
-            const count   = drawCounts[p.id] ?? 0
-            const isFirst = idx === 0
-            return (
-              <div
-                key={p.id}
-                style={{
-                  display:        'flex',
-                  alignItems:     'center',
-                  gap:            12,
-                  padding:        '10px 14px',
-                  background:     isFirst ? 'rgba(155, 77, 255, 0.12)' : 'var(--night-700)',
-                  borderRadius:   'var(--radius-lg)',
-                  border:         `1px solid ${isFirst ? 'rgba(155, 77, 255, 0.30)' : 'var(--border-hairline)'}`,
-                }}
-              >
-                {/* Rang */}
-                <span
-                  style={{
-                    width:      20,
-                    textAlign:  'center',
-                    flexShrink: 0,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize:   'var(--text-sm)',
-                    color:      isFirst ? 'var(--violet-400)' : 'var(--text-tertiary)',
-                  }}
-                >
-                  {isFirst ? '🏆' : `#${idx + 1}`}
-                </span>
-
-                <Avatar name={p.pseudo} size={36} />
-
-                <span
-                  style={{
-                    flex:       1,
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 600,
-                    fontSize:   'var(--text-base)',
-                    color:      'var(--text-primary)',
-                  }}
-                >
-                  {p.pseudo}
-                  {p.isHost && (
-                    <span style={{ marginLeft: 5, fontSize: 'var(--text-xs)' }}>👑</span>
-                  )}
-                </span>
-
-                {/* Nb cartes */}
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                    fontSize:   'var(--text-sm)',
-                    color:      isFirst ? 'var(--violet-400)' : 'var(--text-secondary)',
-                  }}
-                >
-                  {count} 🃏
-                </span>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* ── Carte MVP ── */}
-        <CardPanel glow style={{ marginBottom: 28, textAlign: 'center' }} padding="var(--space-5)">
-          <p
-            style={{
-              margin:     0,
-              fontFamily: 'var(--font-body)',
-              fontWeight: 600,
-              fontSize:   'var(--text-base)',
-              color:      'var(--text-primary)',
-              lineHeight: 1.4,
-            }}
+        {/* CTAs */}
+        <div
+          style={{
+            position:      'absolute',
+            bottom:        24,
+            left:          'var(--gutter)',
+            right:         'var(--gutter)',
+            display:       'flex',
+            flexDirection: 'column',
+            gap:           10,
+          }}
+        >
+          <Button
+            variant="party"
+            size="lg"
+            block
+            iconLeft={<RotateCcw size={20} />}
+            onClick={handleReplay}
           >
-            {mvpMsg}
-          </p>
-        </CardPanel>
-
-        {/* ── CTAs ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>
-          <Button variant="party" size="lg" block iconLeft={<RotateCcw size={20} />} onClick={onReplay}>
             Rejouer
           </Button>
-          <Button variant="ghost" size="lg" block iconLeft={<LogOut size={20} />} onClick={onQuit}>
+          <Button
+            variant="ghost"
+            size="lg"
+            block
+            iconLeft={<LogOut size={20} />}
+            onClick={handleQuit}
+          >
             Quitter
           </Button>
         </div>
