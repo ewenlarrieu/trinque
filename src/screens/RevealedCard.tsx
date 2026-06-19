@@ -14,11 +14,27 @@ interface RevealedCardProps {
   onNext: () => void
 }
 
-export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) {
-  // Start hidden (rotateY 90°), flip to face after 30 ms — same pattern as skill kit
-  const [flipped, setFlipped] = useState(false)
+const reducedMotion =
+  typeof window !== 'undefined' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) {
+  // false = rotateY 90° (caché), true = rotateY 0° (visible)
+  // Avec reduced-motion : démarre directement visible, pas d'animation
+  const [flipped, setFlipped] = useState(reducedMotion)
+
+  // Bloquer le scroll de l'arrière-plan tant que l'overlay est monté
   useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
+
+  // Déclencher le flip à chaque nouvelle carte
+  useEffect(() => {
+    if (reducedMotion) return
     setFlipped(false)
     const t = setTimeout(() => setFlipped(true), 30)
     return () => clearTimeout(t)
@@ -29,11 +45,15 @@ export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) 
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'var(--grad-night)',
+        // Voile sombre semi-transparent + blur par-dessus Game
+        background: 'rgba(10, 5, 30, 0.82)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
         display: 'flex',
         justifyContent: 'center',
         zIndex: 50,
         overflowX: 'hidden',
+        overflowY: 'hidden',
       }}
     >
       <Backdrop />
@@ -49,7 +69,7 @@ export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) 
           minHeight: '100dvh',
         }}
       >
-        {/* Header — back = "acknowledges card" = same as next turn */}
+        {/* Retour = confirme la carte = nextTurn */}
         <Header
           title={rule.titre}
           onBack={onNext}
@@ -60,7 +80,7 @@ export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) 
           }
         />
 
-        {/* Card + rule centered */}
+        {/* Carte + règle centrées */}
         <div
           style={{
             position: 'relative',
@@ -73,20 +93,22 @@ export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) 
             perspective: 1200,
           }}
         >
-          {/* Flip container */}
+          {/* Conteneur du flip 3D */}
           <div
             style={{
               transformStyle: 'preserve-3d',
               transform: flipped
                 ? 'rotateY(0deg) scale(1)'
                 : 'rotateY(90deg) scale(0.9)',
-              transition: 'transform var(--dur-flip) var(--ease-bounce)',
+              transition: reducedMotion
+                ? 'none'
+                : 'transform var(--dur-flip) var(--ease-bounce)',
             }}
           >
             <PlayingCard rank={card.rank} suit={card.suit} width={210} />
           </div>
 
-          {/* Rule text */}
+          {/* Règle du rang */}
           <CardPanel
             glow
             style={{ width: '100%', maxWidth: 300 }}
@@ -108,7 +130,7 @@ export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) 
           </CardPanel>
         </div>
 
-        {/* CTA */}
+        {/* CTA bas */}
         <div style={{ position: 'relative', paddingTop: 8 }}>
           <Button
             variant="party"
