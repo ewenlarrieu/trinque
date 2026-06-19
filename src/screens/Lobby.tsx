@@ -5,8 +5,10 @@ import { Backdrop } from '../components/ui/Backdrop'
 import { Header } from '../components/ui/Header'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { MuteButton } from '../components/ui/MuteButton'
 import { GameCode } from '../components/ui/GameCode'
 import { PlayerChip } from '../components/ui/PlayerChip'
+import { useSound } from '../audio/useSound'
 
 export default function Lobby() {
   const gameCode    = useGameStore((s) => s.gameCode)
@@ -16,8 +18,10 @@ export default function Lobby() {
   const navigate    = useNavigate()
 
   const isHost = players.some((p) => p.id === myPlayerId && p.isHost)
+  const { play } = useSound()
 
   const handleStart = () => {
+    play('start')
     startGame()
     navigate(`/game/${gameCode}`)
   }
@@ -51,7 +55,12 @@ export default function Lobby() {
         <Header
           title="Le salon"
           onBack={() => navigate('/')}
-          right={<Badge tone="success">En ligne</Badge>}
+          right={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Badge tone="success">En ligne</Badge>
+              <MuteButton />
+            </div>
+          }
         />
 
         {/* Main content — flex:1, scrollable list inside */}

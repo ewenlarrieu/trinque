@@ -6,9 +6,11 @@ import { Backdrop } from '../components/ui/Backdrop'
 import { Header } from '../components/ui/Header'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { MuteButton } from '../components/ui/MuteButton'
 import { Avatar } from '../components/ui/Avatar'
 import { PlayingCard } from '../components/ui/PlayingCard'
 import RevealedCard from './RevealedCard'
+import { unlockAudio, playSound } from '../audio/soundService'
 
 export default function Game() {
   const gameCode        = useGameStore((s) => s.gameCode)
@@ -64,9 +66,12 @@ export default function Game() {
           title="Manche 1"
           onBack={() => navigate(`/lobby/${gameCode}`)}
           right={
-            <Badge tone="violet">
-              {players.length} joueur{players.length > 1 ? 's' : ''}
-            </Badge>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Badge tone="violet">
+                {players.length} joueur{players.length > 1 ? 's' : ''}
+              </Badge>
+              <MuteButton />
+            </div>
           }
         />
 
@@ -181,7 +186,11 @@ export default function Game() {
                   padding: 0,
                   WebkitTapHighlightColor: 'transparent',
                 }}
-                onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)' }}
+                onPointerDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.97)'
+                  unlockAudio()
+                  playSound('click')
+                }}
                 onPointerUp={(e) => { e.currentTarget.style.transform = '' }}
                 onPointerLeave={(e) => { e.currentTarget.style.transform = '' }}
               >

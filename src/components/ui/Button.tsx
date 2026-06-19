@@ -1,4 +1,5 @@
 import { type ButtonHTMLAttributes } from 'react'
+import { unlockAudio, playSound } from '../../audio/soundService'
 
 type Variant = 'primary' | 'secondary' | 'accent' | 'party' | 'ghost'
 type Size = 'sm' | 'md' | 'lg'
@@ -65,7 +66,13 @@ export function Button({
         WebkitTapHighlightColor: 'transparent',
         ...style,
       }}
-      onPointerDown={(e) => { if (!disabled) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.95)' }}
+      onPointerDown={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.transform = 'scale(0.95)'
+          unlockAudio()
+          playSound('click')
+        }
+      }}
       onPointerUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = '' }}
       onPointerLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = '' }}
       {...rest}
