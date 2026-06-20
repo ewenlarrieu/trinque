@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { ref, set as dbSet, get as dbGet, update } from 'firebase/database'
+import { auth, db } from '../lib/firebase'
 import { type Card, freshDeck } from '../data/deck'
 
 export interface Player {
@@ -8,75 +10,84 @@ export interface Player {
   isHost: boolean
 }
 
-// Passe à false pour jouer sans joueurs fictifs
-export const MOCK_PLAYERS = true
-
-const MOCK: Player[] = [
-  { id: 'mock-1', pseudo: 'Marion', isHost: false },
-  { id: 'mock-2', pseudo: 'Léo',    isHost: false },
-  { id: 'mock-3', pseudo: 'Sacha',  isHost: false },
-  { id: 'mock-4', pseudo: 'Inès',   isHost: false },
-]
-
 interface GameState {
-  gameCode: string | null
-  hostId: string | null
-  myPlayerId: string | null
-  players: Player[]
+  gameCode:         string | null
+  myPlayerId:       string | null
+  players:          Player[]
   currentTurnIndex: number
-  deck: Card[]
-  drawnCard: Card | null
-  drawnCount: number                  // total cartes piochées dans la partie
-  drawCounts: Record<string, number>  // nb cartes par playerId
+  deck:             Card[]
+  drawnCard:        Card | null
+  drawnCount:       number
+  drawCounts:       Record<string, number>
 
-  createGame: (pseudo: string) => void
-  joinGame: (code: string, pseudo: string) => void
-  startGame: () => void
-  drawCard: () => void
-  nextTurn: () => void
-  resetGame: () => void
+  setMyPlayerId:  (uid: string) => void
+  createGame:     (pseudo: string) => Promise<string>
+  joinGame:       (code: string, pseudo: string) => Promise<void>
+  startLocalGame: (players: Player[]) => void
+  drawCard:       () => void
+  nextTurn:       () => void
+  resetGame:      () => void
+}
+
+function generateCode(): string {
+  return Math.random().toString(36).slice(2, 8).toUpperCase()
 }
 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      gameCode: null,
-      hostId: null,
-      myPlayerId: null,
-      players: [],
+      gameCode:         null,
+      myPlayerId:       null,
+      players:          [],
       currentTurnIndex: 0,
-      deck: [],
-      drawnCard: null,
-      drawnCount: 0,
-      drawCounts: {},
+      deck:             [],
+      drawnCard:        null,
+      drawnCount:       0,
+      drawCounts:       {},
 
-      createGame: (pseudo) => {
-        const code = Math.random().toString(36).slice(2, 8).toUpperCase()
-        const hostId = crypto.randomUUID()
-        const host: Player = { id: hostId, pseudo, isHost: true }
-        set({
-          gameCode: code,
-          hostId,
-          myPlayerId: hostId,
-          players: MOCK_PLAYERS ? [host, ...MOCK] : [host],
-          deck: [],
-          drawnCard: null,
-          currentTurnIndex: 0,
+      setMyPlayerId: (uid) => set({ myPlayerId: uid }),
+
+      createGame: async (pseudo) => {
+        const uid = auth.currentUser?.uid
+        if (!uid) throw new Error('Non authentifié')
+
+        const code = generateCode()
+        await dbSet(ref(db, `games/${code}`), {
+          hostId:    uid,
+          status:    'lobby',
+          createdAt: Date.now(),
+          players: {
+            [uid]: { pseudo, isHost: true, joinedAt: Date.now() },
+          },
         })
+        set({ gameCode: code })
+        return code
       },
 
-      joinGame: (code, pseudo) => {
-        const id = crypto.randomUUID()
-        const newPlayer: Player = { id, pseudo, isHost: false }
-        set((state) => ({
-          gameCode: code,
-          myPlayerId: id,
-          players: [...state.players, newPlayer],
-        }))
+      joinGame: async (code, pseudo) => {
+        const uid = auth.currentUser?.uid
+        if (!uid) throw new Error('Non authentifié')
+
+        const snap = await dbGet(ref(db, `games/${code}`))
+        if (!snap.exists()) throw new Error("Cette partie n'existe pas")
+
+        await update(ref(db, `games/${code}/players/${uid}`), {
+          pseudo,
+          isHost:   false,
+          joinedAt: Date.now(),
+        })
+        set({ gameCode: code })
       },
 
-      startGame: () => {
-        set({ deck: freshDeck(), currentTurnIndex: 0, drawnCard: null, drawnCount: 0, drawCounts: {} })
+      startLocalGame: (players) => {
+        set({
+          players,
+          deck:             freshDeck(),
+          currentTurnIndex: 0,
+          drawnCard:        null,
+          drawnCount:       0,
+          drawCounts:       {},
+        })
       },
 
       drawCard: () => {
@@ -96,39 +107,30 @@ export const useGameStore = create<GameState>()(
 
       nextTurn: () => {
         set((state) => ({
-          drawnCard: null,
-          currentTurnIndex:
-            (state.currentTurnIndex + 1) % Math.max(state.players.length, 1),
+          drawnCard:        null,
+          currentTurnIndex: (state.currentTurnIndex + 1) % Math.max(state.players.length, 1),
         }))
       },
 
       resetGame: () => {
         set({
-          gameCode: null,
-          hostId: null,
-          myPlayerId: null,
-          players: [],
+          gameCode:         null,
+          myPlayerId:       null,
+          players:          [],
           currentTurnIndex: 0,
-          deck: [],
-          drawnCard: null,
-          drawnCount: 0,
-          drawCounts: {},
+          deck:             [],
+          drawnCard:        null,
+          drawnCount:       0,
+          drawCounts:       {},
         })
       },
     }),
     {
       name: 'trinque-game',
       partialize: (state) => ({
-        gameCode: state.gameCode,
-        hostId: state.hostId,
+        gameCode:   state.gameCode,
         myPlayerId: state.myPlayerId,
-        players: state.players,
-        currentTurnIndex: state.currentTurnIndex,
-        deck: state.deck,
-        drawnCard: state.drawnCard,
-        drawnCount: state.drawnCount,
-        drawCounts: state.drawCounts,
       }),
-    }
-  )
+    },
+  ),
 )

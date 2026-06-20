@@ -1,3 +1,6 @@
+# Env — secrets Firebase
+.env
+
 # Logs
 logs
 *.log

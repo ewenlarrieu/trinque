@@ -1,6 +1,9 @@
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Play } from 'lucide-react'
-import { useGameStore } from '../store/game'
+import { ref, onValue, update } from 'firebase/database'
+import { db } from '../lib/firebase'
+import { useGameStore, type Player } from '../store/game'
 import { Backdrop } from '../components/ui/Backdrop'
 import { Header } from '../components/ui/Header'
 import { Badge } from '../components/ui/Badge'
@@ -10,31 +13,137 @@ import { GameCode } from '../components/ui/GameCode'
 import { PlayerChip } from '../components/ui/PlayerChip'
 import { useSound } from '../audio/useSound'
 
+interface FirebasePlayer {
+  pseudo:   string
+  isHost:   boolean
+  joinedAt: number
+}
+
+interface FirebaseGame {
+  hostId:    string
+  status:    'lobby' | 'playing' | 'ended'
+  createdAt: number
+  players:   Record<string, FirebasePlayer>
+}
+
 export default function Lobby() {
-  const gameCode    = useGameStore((s) => s.gameCode)
-  const players     = useGameStore((s) => s.players)
-  const myPlayerId  = useGameStore((s) => s.myPlayerId)
-  const startGame   = useGameStore((s) => s.startGame)
-  const navigate    = useNavigate()
+  const { code }        = useParams<{ code: string }>()
+  const myPlayerId      = useGameStore((s) => s.myPlayerId)
+  const startLocalGame  = useGameStore((s) => s.startLocalGame)
+  const navigate        = useNavigate()
+  const { play }        = useSound()
 
-  const isHost = players.some((p) => p.id === myPlayerId && p.isHost)
-  const { play } = useSound()
+  const [game, setGame]     = useState<FirebaseGame | null>(null)
+  const [loading, setLoading] = useState(true)
+  const navigatedRef        = useRef(false)
 
-  const handleStart = () => {
+  // Abonnement temps réel
+  useEffect(() => {
+    if (!code) return
+    const r = ref(db, `games/${code}`)
+    return onValue(r, (snap) => {
+      setGame(snap.exists() ? (snap.val() as FirebaseGame) : null)
+      setLoading(false)
+    })
+  }, [code])
+
+  // Navigation automatique quand la partie démarre
+  useEffect(() => {
+    if (!game || game.status !== 'playing' || navigatedRef.current) return
+    navigatedRef.current = true
+
+    const playerList: Player[] = Object.entries(game.players ?? {})
+      .sort(([, a], [, b]) => a.joinedAt - b.joinedAt)
+      .map(([uid, data]) => ({ id: uid, pseudo: data.pseudo, isHost: data.isHost }))
+
+    startLocalGame(playerList)
+    navigate(`/game/${code}`, { replace: true })
+  }, [game])
+
+  const players: Player[] = Object.entries(game?.players ?? {})
+    .sort(([, a], [, b]) => a.joinedAt - b.joinedAt)
+    .map(([uid, data]) => ({ id: uid, pseudo: data.pseudo, isHost: data.isHost }))
+
+  const isHost = !!game && game.hostId === myPlayerId
+
+  const handleStart = async () => {
+    if (!code) return
     play('start')
-    startGame()
-    navigate(`/game/${gameCode}`)
+    await update(ref(db, `games/${code}`), { status: 'playing' })
   }
 
+  // ── Écran de chargement ────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight:      '100dvh',
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'center',
+          background:     'var(--grad-night)',
+          position:       'relative',
+        }}
+      >
+        <Backdrop />
+        <p
+          style={{
+            fontFamily:    'var(--font-display)',
+            fontWeight:    600,
+            fontSize:      'var(--text-lg)',
+            color:         'var(--text-secondary)',
+            letterSpacing: '0.08em',
+          }}
+        >
+          Chargement…
+        </p>
+      </div>
+    )
+  }
+
+  // ── Partie introuvable ─────────────────────────────────────────────────────
+  if (!game) {
+    return (
+      <div
+        style={{
+          minHeight:      '100dvh',
+          display:        'flex',
+          flexDirection:  'column',
+          alignItems:     'center',
+          justifyContent: 'center',
+          gap:            16,
+          background:     'var(--grad-night)',
+          position:       'relative',
+        }}
+      >
+        <Backdrop />
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize:   'var(--text-xl)',
+            color:      'var(--text-primary)',
+          }}
+        >
+          Partie introuvable
+        </p>
+        <Button variant="ghost" size="md" onClick={() => navigate('/')}>
+          Retour à l'accueil
+        </Button>
+      </div>
+    )
+  }
+
+  // ── Lobby ──────────────────────────────────────────────────────────────────
   return (
     <div
       style={{
-        minHeight: '100dvh',
-        width: '100%',
-        overflowX: 'hidden',
+        minHeight:  '100dvh',
+        width:      '100%',
+        overflowX:  'hidden',
         background: 'var(--grad-night)',
-        position: 'relative',
-        display: 'flex',
+        position:   'relative',
+        display:    'flex',
         justifyContent: 'center',
       }}
     >
@@ -42,16 +151,15 @@ export default function Lobby() {
 
       <div
         style={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: 'var(--screen-max)',
-          display: 'flex',
+          position:      'relative',
+          width:         '100%',
+          maxWidth:      'var(--screen-max)',
+          display:       'flex',
           flexDirection: 'column',
-          padding: '54px var(--gutter) 24px',
-          minHeight: '100dvh',
+          padding:       '54px var(--gutter) 24px',
+          minHeight:     '100dvh',
         }}
       >
-        {/* Header */}
         <Header
           title="Le salon"
           onBack={() => navigate('/')}
@@ -63,25 +171,22 @@ export default function Lobby() {
           }
         />
 
-        {/* Main content — flex:1, scrollable list inside */}
         <div
           style={{
-            position: 'relative',
-            display: 'flex',
+            position:      'relative',
+            display:       'flex',
             flexDirection: 'column',
-            gap: 16,
-            flex: 1,
-            overflow: 'hidden',
+            gap:           16,
+            flex:          1,
+            overflow:      'hidden',
           }}
         >
-          {/* Game code card — tappable, copies to clipboard */}
-          <GameCode code={gameCode ?? '------'} />
+          <GameCode code={code ?? '------'} />
 
-          {/* Section title + player count */}
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
+              display:        'flex',
+              alignItems:     'center',
               justifyContent: 'space-between',
             }}
           >
@@ -89,8 +194,8 @@ export default function Lobby() {
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 700,
-                fontSize: 'var(--text-xl)',
-                color: 'var(--text-primary)',
+                fontSize:   'var(--text-xl)',
+                color:      'var(--text-primary)',
               }}
             >
               Dans la place
@@ -100,14 +205,13 @@ export default function Lobby() {
             </Badge>
           </div>
 
-          {/* Scrollable player list */}
           <div
             style={{
-              display: 'flex',
+              display:       'flex',
               flexDirection: 'column',
-              gap: 10,
-              overflowY: 'auto',
-              flex: 1,
+              gap:           10,
+              overflowY:     'auto',
+              flex:          1,
             }}
           >
             {players.map((p) => (
@@ -121,7 +225,6 @@ export default function Lobby() {
           </div>
         </div>
 
-        {/* Bottom CTA */}
         <div style={{ position: 'relative', paddingTop: 12 }}>
           {isHost ? (
             <>
@@ -136,10 +239,10 @@ export default function Lobby() {
               </Button>
               <p
                 style={{
-                  textAlign: 'center',
-                  margin: '8px 0 0',
-                  fontSize: 'var(--text-xs)',
-                  color: 'var(--text-tertiary)',
+                  textAlign:  'center',
+                  margin:     '8px 0 0',
+                  fontSize:   'var(--text-xs)',
+                  color:      'var(--text-tertiary)',
                   fontFamily: 'var(--font-body)',
                 }}
               >
@@ -149,11 +252,11 @@ export default function Lobby() {
           ) : (
             <p
               style={{
-                textAlign: 'center',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--text-tertiary)',
+                textAlign:  'center',
+                fontSize:   'var(--text-sm)',
+                color:      'var(--text-tertiary)',
                 fontFamily: 'var(--font-body)',
-                padding: '16px 0',
+                padding:    '16px 0',
               }}
             >
               En attente que l'hôte lance la partie…

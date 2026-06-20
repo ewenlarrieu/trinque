@@ -8,66 +8,80 @@ import { Backdrop } from '../components/ui/Backdrop'
 import logoMark from '../assets/logo-mark.svg'
 
 export default function Accueil() {
-  const [pseudo, setPseudo] = useState('')
-  const [code, setCode] = useState('')
+  const [pseudo, setPseudo]         = useState('')
+  const [code, setCode]             = useState('')
+  const [loadingCreate, setLoadingCreate] = useState(false)
+  const [loadingJoin, setLoadingJoin]     = useState(false)
+  const [joinError, setJoinError]   = useState<string | null>(null)
 
   const createGame = useGameStore((s) => s.createGame)
   const joinGame   = useGameStore((s) => s.joinGame)
   const navigate   = useNavigate()
 
   const trimmedPseudo = pseudo.trim()
-  const canCreate = trimmedPseudo.length >= 2
-  const canJoin   = code.length >= 3 && trimmedPseudo.length >= 2
+  const busy      = loadingCreate || loadingJoin
+  const canCreate = trimmedPseudo.length >= 2 && !busy
+  const canJoin   = code.length >= 3 && trimmedPseudo.length >= 2 && !busy
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!canCreate) return
-    createGame(trimmedPseudo)
-    const { gameCode } = useGameStore.getState()
-    navigate(`/lobby/${gameCode}`)
+    setLoadingCreate(true)
+    try {
+      const gameCode = await createGame(trimmedPseudo)
+      navigate(`/lobby/${gameCode}`)
+    } catch {
+      setLoadingCreate(false)
+    }
   }
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!canJoin) return
     const upperCode = code.toUpperCase()
-    joinGame(upperCode, trimmedPseudo)
-    navigate(`/lobby/${upperCode}`)
+    setJoinError(null)
+    setLoadingJoin(true)
+    try {
+      await joinGame(upperCode, trimmedPseudo)
+      navigate(`/lobby/${upperCode}`)
+    } catch (err) {
+      setJoinError(err instanceof Error ? err.message : 'Erreur réseau')
+      setLoadingJoin(false)
+    }
   }
 
   return (
     <div
       style={{
-        minHeight: '100dvh',
-        width: '100%',
-        overflowX: 'hidden',
+        minHeight:  '100dvh',
+        width:      '100%',
+        overflowX:  'hidden',
         background: 'var(--grad-night)',
-        position: 'relative',
-        display: 'flex',
+        position:   'relative',
+        display:    'flex',
         justifyContent: 'center',
       }}
     >
       <Backdrop />
 
-      {/* Content column — max 440 px, full height */}
       <div
         style={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: 'var(--screen-max)',
-          display: 'flex',
+          position:      'relative',
+          width:         '100%',
+          maxWidth:      'var(--screen-max)',
+          display:       'flex',
           flexDirection: 'column',
-          padding: '54px var(--gutter) 24px',
-          minHeight: '100dvh',
+          padding:       '54px var(--gutter) 24px',
+          minHeight:     '100dvh',
         }}
       >
-        {/* Logo + title section (takes available vertical space) */}
+        {/* Logo + titre */}
         <div
           style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
+            flex:           1,
+            display:        'flex',
+            flexDirection:  'column',
             justifyContent: 'center',
-            alignItems: 'center',
-            gap: 8,
+            alignItems:     'center',
+            gap:            8,
           }}
         >
           <img
@@ -83,16 +97,16 @@ export default function Accueil() {
 
           <h1
             style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              fontSize: 'var(--text-6xl)',
-              lineHeight: 0.95,
-              textAlign: 'center',
-              background: 'var(--grad-party)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
-              margin: 0,
+              fontFamily:          'var(--font-display)',
+              fontWeight:          700,
+              fontSize:            'var(--text-6xl)',
+              lineHeight:          0.95,
+              textAlign:           'center',
+              background:          'var(--grad-party)',
+              WebkitBackgroundClip:'text',
+              backgroundClip:      'text',
+              color:               'transparent',
+              margin:              0,
             }}
           >
             TRINQUE
@@ -100,12 +114,12 @@ export default function Accueil() {
 
           <p
             style={{
-              margin: '4px 0 0',
-              color: 'var(--text-secondary)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 600,
+              margin:        '4px 0 0',
+              color:         'var(--text-secondary)',
+              fontFamily:    'var(--font-display)',
+              fontWeight:    600,
               letterSpacing: '0.14em',
-              fontSize: 13,
+              fontSize:      13,
               textTransform: 'uppercase',
             }}
           >
@@ -113,9 +127,8 @@ export default function Accueil() {
           </p>
         </div>
 
-        {/* CTA section — anchored at bottom */}
+        {/* CTA section */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 8 }}>
-          {/* Pseudo field — required for both actions */}
           <Input
             value={pseudo}
             onChange={(e) => setPseudo(e.target.value)}
@@ -125,7 +138,6 @@ export default function Accueil() {
             autoComplete="given-name"
           />
 
-          {/* Primary CTA */}
           <Button
             variant="party"
             size="lg"
@@ -134,27 +146,42 @@ export default function Accueil() {
             iconLeft={<Plus size={22} />}
             onClick={handleCreate}
           >
-            Créer une partie
+            {loadingCreate ? 'Création…' : 'Créer une partie'}
           </Button>
 
-          {/* Join row */}
-          <div style={{ display: 'flex', gap: 10, minWidth: 0 }}>
-            <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              variant="code"
-              placeholder="CODE"
-              maxLength={6}
-              containerStyle={{ flex: 1, minWidth: 0 }}
-            />
-            <Button
-              variant="secondary"
-              size="md"
-              disabled={!canJoin}
-              onClick={handleJoin}
-            >
-              Rejoindre
-            </Button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 10, minWidth: 0 }}>
+              <Input
+                value={code}
+                onChange={(e) => { setCode(e.target.value.toUpperCase()); setJoinError(null) }}
+                variant="code"
+                placeholder="CODE"
+                maxLength={6}
+                containerStyle={{ flex: 1, minWidth: 0 }}
+              />
+              <Button
+                variant="secondary"
+                size="md"
+                disabled={!canJoin}
+                onClick={handleJoin}
+              >
+                {loadingJoin ? 'Vérif…' : 'Rejoindre'}
+              </Button>
+            </div>
+
+            {joinError && (
+              <p
+                style={{
+                  margin:     0,
+                  fontSize:   'var(--text-sm)',
+                  fontFamily: 'var(--font-body)',
+                  color:      'var(--rose-400, #fb7185)',
+                  paddingLeft: 4,
+                }}
+              >
+                {joinError}
+              </p>
+            )}
           </div>
         </div>
       </div>
