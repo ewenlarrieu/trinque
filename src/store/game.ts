@@ -10,9 +10,24 @@ export interface Player {
   isHost: boolean
 }
 
+// UUID stable par navigateur, indépendant du UID Firebase.
+// Firebase auth donne le même UID à tous les onglets du même navigateur,
+// ce qui ferait écraser les joueurs entre eux. On utilise un UUID propre.
+function getOrCreatePlayerId(): string {
+  const key = 'trinque-pid'
+  let id = localStorage.getItem(key)
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem(key, id)
+  }
+  return id
+}
+
+const MY_PLAYER_ID = getOrCreatePlayerId()
+
 interface GameState {
   gameCode:         string | null
-  myPlayerId:       string | null
+  myPlayerId:       string
   players:          Player[]
   currentTurnIndex: number
   deck:             Card[]
@@ -20,7 +35,6 @@ interface GameState {
   drawnCount:       number
   drawCounts:       Record<string, number>
 
-  setMyPlayerId:  (uid: string) => void
   createGame:     (pseudo: string) => Promise<string>
   joinGame:       (code: string, pseudo: string) => Promise<void>
   startLocalGame: (players: Player[]) => void
@@ -37,7 +51,7 @@ export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
       gameCode:         null,
-      myPlayerId:       null,
+      myPlayerId:       MY_PLAYER_ID,
       players:          [],
       currentTurnIndex: 0,
       deck:             [],
@@ -45,19 +59,19 @@ export const useGameStore = create<GameState>()(
       drawnCount:       0,
       drawCounts:       {},
 
-      setMyPlayerId: (uid) => set({ myPlayerId: uid }),
-
       createGame: async (pseudo) => {
-        const uid = auth.currentUser?.uid
-        if (!uid) throw new Error('Non authentifié')
+        // Vérifie que Firebase auth est prête (connexion réseau ok)
+        if (!auth.currentUser) throw new Error('Non authentifié')
 
+        const pid  = MY_PLAYER_ID
         const code = generateCode()
+
         await dbSet(ref(db, `games/${code}`), {
-          hostId:    uid,
+          hostId:    pid,
           status:    'lobby',
           createdAt: Date.now(),
           players: {
-            [uid]: { pseudo, isHost: true, joinedAt: Date.now() },
+            [pid]: { pseudo, isHost: true, joinedAt: Date.now() },
           },
         })
         set({ gameCode: code })
@@ -65,16 +79,17 @@ export const useGameStore = create<GameState>()(
       },
 
       joinGame: async (code, pseudo) => {
-        const uid = auth.currentUser?.uid
-        if (!uid) throw new Error('Non authentifié')
+        if (!auth.currentUser) throw new Error('Non authentifié')
 
         const snap = await dbGet(ref(db, `games/${code}`))
         if (!snap.exists()) throw new Error("Cette partie n'existe pas")
 
-        // update() au niveau parent avec un chemin-clé slash → écriture atomique
-        // qui ajoute players/${uid} sans toucher aux autres entrées de players
+        const pid = MY_PLAYER_ID
+
+        // update() au niveau du jeu avec un chemin-clé slash :
+        // ajoute players/${pid} de façon atomique sans toucher aux autres joueurs
         await update(ref(db, `games/${code}`), {
-          [`players/${uid}`]: {
+          [`players/${pid}`]: {
             pseudo,
             isHost:   false,
             joinedAt: Date.now(),
@@ -119,21 +134,21 @@ export const useGameStore = create<GameState>()(
       resetGame: () => {
         set({
           gameCode:         null,
-          myPlayerId:       null,
           players:          [],
           currentTurnIndex: 0,
           deck:             [],
           drawnCard:        null,
           drawnCount:       0,
           drawCounts:       {},
+          // myPlayerId intentionnellement conservé — identité stable par navigateur
         })
       },
     }),
     {
       name: 'trinque-game',
       partialize: (state) => ({
-        gameCode:   state.gameCode,
-        myPlayerId: state.myPlayerId,
+        gameCode: state.gameCode,
+        // myPlayerId vient de localStorage via getOrCreatePlayerId(), pas du store
       }),
     },
   ),

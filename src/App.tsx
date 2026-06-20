@@ -2,22 +2,17 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth'
 import { auth } from './lib/firebase'
-import { useGameStore } from './store/game'
 import Accueil from './screens/Accueil'
 import Lobby from './screens/Lobby'
 import Game from './screens/Game'
 import { Backdrop } from './components/ui/Backdrop'
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const [ready, setReady]     = useState(false)
-  const setMyPlayerId         = useGameStore((s) => s.setMyPlayerId)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     signInAnonymously(auth).catch(console.error)
-    return onAuthStateChanged(auth, (user) => {
-      if (user) setMyPlayerId(user.uid)
-      setReady(true)
-    })
+    return onAuthStateChanged(auth, () => setReady(true))
   }, [])
 
   if (!ready) {
