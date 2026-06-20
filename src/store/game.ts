@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { ref, set as dbSet, get as dbGet } from 'firebase/database'
+import { ref, set as dbSet, get as dbGet, update } from 'firebase/database'
 import { auth, db } from '../lib/firebase'
 import { type Card, freshDeck } from '../data/deck'
 
@@ -71,10 +71,14 @@ export const useGameStore = create<GameState>()(
         const snap = await dbGet(ref(db, `games/${code}`))
         if (!snap.exists()) throw new Error("Cette partie n'existe pas")
 
-        await dbSet(ref(db, `games/${code}/players/${uid}`), {
-          pseudo,
-          isHost:   false,
-          joinedAt: Date.now(),
+        // update() au niveau parent avec un chemin-clé slash → écriture atomique
+        // qui ajoute players/${uid} sans toucher aux autres entrées de players
+        await update(ref(db, `games/${code}`), {
+          [`players/${uid}`]: {
+            pseudo,
+            isHost:   false,
+            joinedAt: Date.now(),
+          },
         })
         set({ gameCode: code })
       },
