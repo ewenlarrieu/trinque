@@ -4,6 +4,7 @@ import { Play } from 'lucide-react'
 import { ref, onValue, update } from 'firebase/database'
 import { db } from '../lib/firebase'
 import { useGameStore, type Player } from '../store/game'
+import { freshDeck } from '../data/deck'
 import { Backdrop } from '../components/ui/Backdrop'
 import { Header } from '../components/ui/Header'
 import { Badge } from '../components/ui/Badge'
@@ -27,21 +28,19 @@ interface FirebaseGame {
 }
 
 export default function Lobby() {
-  const { code }        = useParams<{ code: string }>()
-  const myPlayerId      = useGameStore((s) => s.myPlayerId)
-  const startLocalGame  = useGameStore((s) => s.startLocalGame)
-  const navigate        = useNavigate()
-  const { play }        = useSound()
+  const { code }       = useParams<{ code: string }>()
+  const myPlayerId     = useGameStore((s) => s.myPlayerId)
+  const navigate       = useNavigate()
+  const { play }       = useSound()
 
-  const [game, setGame]     = useState<FirebaseGame | null>(null)
+  const [game, setGame]       = useState<FirebaseGame | null>(null)
   const [loading, setLoading] = useState(true)
-  const navigatedRef        = useRef(false)
+  const navigatedRef          = useRef(false)
 
   // Abonnement temps réel
   useEffect(() => {
     if (!code) return
-    const r = ref(db, `games/${code}`)
-    return onValue(r, (snap) => {
+    return onValue(ref(db, `games/${code}`), (snap) => {
       setGame(snap.exists() ? (snap.val() as FirebaseGame) : null)
       setLoading(false)
     })
@@ -51,80 +50,56 @@ export default function Lobby() {
   useEffect(() => {
     if (!game || game.status !== 'playing' || navigatedRef.current) return
     navigatedRef.current = true
-
-    const playerList: Player[] = Object.entries(game.players ?? {})
-      .sort(([, a], [, b]) => a.joinedAt - b.joinedAt)
-      .map(([uid, data]) => ({ id: uid, pseudo: data.pseudo, isHost: data.isHost }))
-
-    startLocalGame(playerList)
     navigate(`/game/${code}`, { replace: true })
   }, [game])
 
   const players: Player[] = Object.entries(game?.players ?? {})
     .sort(([, a], [, b]) => a.joinedAt - b.joinedAt)
-    .map(([uid, data]) => ({ id: uid, pseudo: data.pseudo, isHost: data.isHost }))
+    .map(([pid, data]) => ({ id: pid, pseudo: data.pseudo, isHost: data.isHost }))
 
   const isHost = !!game && game.hostId === myPlayerId
 
   const handleStart = async () => {
     if (!code) return
     play('start')
-    await update(ref(db, `games/${code}`), { status: 'playing' })
+    await update(ref(db, `games/${code}`), {
+      status:           'playing',
+      deck:             freshDeck(),
+      deckPosition:     0,
+      currentTurnIndex: 0,
+      drawnCardIndex:   null,
+    })
   }
 
-  // ── Écran de chargement ────────────────────────────────────────────────────
+  // ── Chargement ────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div
         style={{
-          minHeight:      '100dvh',
-          display:        'flex',
-          alignItems:     'center',
-          justifyContent: 'center',
-          background:     'var(--grad-night)',
-          position:       'relative',
+          minHeight: '100dvh', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', background: 'var(--grad-night)', position: 'relative',
         }}
       >
         <Backdrop />
-        <p
-          style={{
-            fontFamily:    'var(--font-display)',
-            fontWeight:    600,
-            fontSize:      'var(--text-lg)',
-            color:         'var(--text-secondary)',
-            letterSpacing: '0.08em',
-          }}
-        >
+        <p style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 'var(--text-lg)', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
           Chargement…
         </p>
       </div>
     )
   }
 
-  // ── Partie introuvable ─────────────────────────────────────────────────────
+  // ── Introuvable ───────────────────────────────────────────────────────────
   if (!game) {
     return (
       <div
         style={{
-          minHeight:      '100dvh',
-          display:        'flex',
-          flexDirection:  'column',
-          alignItems:     'center',
-          justifyContent: 'center',
-          gap:            16,
-          background:     'var(--grad-night)',
-          position:       'relative',
+          minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 16,
+          background: 'var(--grad-night)', position: 'relative',
         }}
       >
         <Backdrop />
-        <p
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize:   'var(--text-xl)',
-            color:      'var(--text-primary)',
-          }}
-        >
+        <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'var(--text-xl)', color: 'var(--text-primary)' }}>
           Partie introuvable
         </p>
         <Button variant="ghost" size="md" onClick={() => navigate('/')}>
@@ -134,30 +109,22 @@ export default function Lobby() {
     )
   }
 
-  // ── Lobby ──────────────────────────────────────────────────────────────────
+  // ── Lobby ─────────────────────────────────────────────────────────────────
   return (
     <div
       style={{
-        minHeight:  '100dvh',
-        width:      '100%',
-        overflowX:  'hidden',
-        background: 'var(--grad-night)',
-        position:   'relative',
-        display:    'flex',
-        justifyContent: 'center',
+        minHeight: '100dvh', width: '100%', overflowX: 'hidden',
+        background: 'var(--grad-night)', position: 'relative',
+        display: 'flex', justifyContent: 'center',
       }}
     >
       <Backdrop />
 
       <div
         style={{
-          position:      'relative',
-          width:         '100%',
-          maxWidth:      'var(--screen-max)',
-          display:       'flex',
-          flexDirection: 'column',
-          padding:       '54px var(--gutter) 24px',
-          minHeight:     '100dvh',
+          position: 'relative', width: '100%', maxWidth: 'var(--screen-max)',
+          display: 'flex', flexDirection: 'column',
+          padding: '54px var(--gutter) 24px', minHeight: '100dvh',
         }}
       >
         <Header
@@ -173,31 +140,14 @@ export default function Lobby() {
 
         <div
           style={{
-            position:      'relative',
-            display:       'flex',
-            flexDirection: 'column',
-            gap:           16,
-            flex:          1,
-            overflow:      'hidden',
+            position: 'relative', display: 'flex', flexDirection: 'column',
+            gap: 16, flex: 1, overflow: 'hidden',
           }}
         >
           <GameCode code={code ?? '------'} />
 
-          <div
-            style={{
-              display:        'flex',
-              alignItems:     'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 700,
-                fontSize:   'var(--text-xl)',
-                color:      'var(--text-primary)',
-              }}
-            >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'var(--text-xl)', color: 'var(--text-primary)' }}>
               Dans la place
             </span>
             <Badge tone="violet">
@@ -205,15 +155,7 @@ export default function Lobby() {
             </Badge>
           </div>
 
-          <div
-            style={{
-              display:       'flex',
-              flexDirection: 'column',
-              gap:           10,
-              overflowY:     'auto',
-              flex:          1,
-            }}
-          >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', flex: 1 }}>
             {players.map((p) => (
               <PlayerChip
                 key={p.id}
@@ -237,28 +179,12 @@ export default function Lobby() {
               >
                 Lancer la fête
               </Button>
-              <p
-                style={{
-                  textAlign:  'center',
-                  margin:     '8px 0 0',
-                  fontSize:   'var(--text-xs)',
-                  color:      'var(--text-tertiary)',
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
+              <p style={{ textAlign: 'center', margin: '8px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
                 Visible uniquement par l'hôte 👑
               </p>
             </>
           ) : (
-            <p
-              style={{
-                textAlign:  'center',
-                fontSize:   'var(--text-sm)',
-                color:      'var(--text-tertiary)',
-                fontFamily: 'var(--font-body)',
-                padding:    '16px 0',
-              }}
-            >
+            <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', padding: '16px 0' }}>
               En attente que l'hôte lance la partie…
             </p>
           )}

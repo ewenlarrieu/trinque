@@ -10,16 +10,17 @@ import { Card as CardPanel } from '../components/ui/Card'
 import { PlayingCard } from '../components/ui/PlayingCard'
 
 interface RevealedCardProps {
-  card: Card
-  rule: RankRule
-  onNext: () => void
+  card:    Card
+  rule:    RankRule
+  onNext:  () => void
+  canNext: boolean   // seul le joueur courant peut passer au tour suivant
 }
 
 const reducedMotion =
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) {
+export default function RevealedCard({ card, rule, onNext, canNext }: RevealedCardProps) {
   // false = rotateY 90° (caché), true = rotateY 0° (visible)
   // Avec reduced-motion : démarre directement visible, pas d'animation
   const [flipped, setFlipped] = useState(reducedMotion)
@@ -82,10 +83,10 @@ export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) 
           minHeight: '100dvh',
         }}
       >
-        {/* Retour = confirme la carte = nextTurn */}
+        {/* Retour = passer au tour — désactivé pour les spectateurs */}
         <Header
           title={rule.titre}
-          onBack={onNext}
+          onBack={canNext ? onNext : undefined}
           right={
             <Badge tone="rose" fill="solid">
               Manche 1
@@ -145,15 +146,30 @@ export default function RevealedCard({ card, rule, onNext }: RevealedCardProps) 
 
         {/* CTA bas */}
         <div style={{ position: 'relative', paddingTop: 8 }}>
-          <Button
-            variant="party"
-            size="lg"
-            block
-            iconRight={<ArrowRight size={22} />}
-            onClick={onNext}
-          >
-            Carte suivante
-          </Button>
+          {canNext ? (
+            <Button
+              variant="party"
+              size="lg"
+              block
+              iconRight={<ArrowRight size={22} />}
+              onClick={onNext}
+            >
+              Carte suivante
+            </Button>
+          ) : (
+            <p
+              style={{
+                textAlign:  'center',
+                fontSize:   'var(--text-sm)',
+                color:      'var(--text-tertiary)',
+                fontFamily: 'var(--font-body)',
+                padding:    '16px 0',
+                margin:     0,
+              }}
+            >
+              En attente du joueur courant…
+            </p>
+          )}
         </div>
       </div>
     </div>
