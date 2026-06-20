@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { ref, set as dbSet, get as dbGet, update } from 'firebase/database'
+import { ref, set as dbSet, get as dbGet } from 'firebase/database'
 import { auth, db } from '../lib/firebase'
 import { type Card, freshDeck } from '../data/deck'
 
@@ -71,7 +71,7 @@ export const useGameStore = create<GameState>()(
         const snap = await dbGet(ref(db, `games/${code}`))
         if (!snap.exists()) throw new Error("Cette partie n'existe pas")
 
-        await update(ref(db, `games/${code}/players/${uid}`), {
+        await dbSet(ref(db, `games/${code}/players/${uid}`), {
           pseudo,
           isHost:   false,
           joinedAt: Date.now(),
