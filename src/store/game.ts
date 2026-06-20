@@ -15,10 +15,11 @@ export interface Player {
 // ce qui ferait écraser les joueurs entre eux. On utilise un UUID propre.
 function getOrCreatePlayerId(): string {
   const key = 'trinque-pid'
-  let id = localStorage.getItem(key)
+  // sessionStorage : isolé par onglet → deux onglets = deux joueurs distincts
+  let id = sessionStorage.getItem(key)
   if (!id) {
     id = crypto.randomUUID()
-    localStorage.setItem(key, id)
+    sessionStorage.setItem(key, id)
   }
   return id
 }
