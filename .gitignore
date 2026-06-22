@@ -1,6 +1,12 @@
 # Env — secrets Firebase
 .env
 
+# Claude Code internal
+.claude/
+
+# Design system dev assets
+public/icons/TRINQUE*
+
 # Logs
 logs
 *.log
