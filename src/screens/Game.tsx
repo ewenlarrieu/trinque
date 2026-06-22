@@ -30,7 +30,6 @@ interface FbGame {
 export default function Game() {
   const { code }   = useParams<{ code: string }>()
   const myPlayerId = useGameStore((s) => s.myPlayerId)
-  const gameCode   = useGameStore((s) => s.gameCode)
   const navigate   = useNavigate()
 
   const [game, setGame]       = useState<FbGame | null>(null)
