@@ -288,7 +288,9 @@ export default function Game() {
       )}
 
       {/* Fin de partie — déclenché par status Firebase */}
-      {game.status === 'ended' && <FinDePartie isHost={isHost} />}
+      {game.status === 'ended' && (
+        <FinDePartie isHost={isHost} gameCode={code ?? ''} myPlayerId={myPlayerId} />
+      )}
     </div>
   )
 }

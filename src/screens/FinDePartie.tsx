@@ -83,11 +83,15 @@ const PHRASES = [
 
 // ── Écran ─────────────────────────────────────────────────────────────────────
 
-export default function FinDePartie({ isHost = false }: { isHost?: boolean }) {
-  const gameCode    = useGameStore((s) => s.gameCode)
-  const myPlayerId  = useGameStore((s) => s.myPlayerId)
-  const resetGame   = useGameStore((s) => s.resetGame)
-  const navigate    = useNavigate()
+interface FinDePartieProps {
+  isHost:     boolean
+  gameCode:   string
+  myPlayerId: string
+}
+
+export default function FinDePartie({ isHost, gameCode, myPlayerId }: FinDePartieProps) {
+  const resetGame = useGameStore((s) => s.resetGame)
+  const navigate  = useNavigate()
   const { play }  = useSound()
 
   const [phrase] = useState(
