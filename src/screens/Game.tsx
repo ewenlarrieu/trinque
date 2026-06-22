@@ -57,6 +57,7 @@ export default function Game() {
     .sort(([, a], [, b]) => a.joinedAt - b.joinedAt)
     .map(([pid, data]) => ({ id: pid, pseudo: data.pseudo, isHost: data.isHost }))
 
+  const isHost        = game?.hostId === myPlayerId
   const currentPlayer = players[currentTurnIndex % Math.max(players.length, 1)]
   const isMyTurn      = currentPlayer?.id === myPlayerId
   const drawnCard     = drawnCardIndex !== null ? (deck[drawnCardIndex] ?? null) : null
@@ -284,7 +285,7 @@ export default function Game() {
       )}
 
       {/* Fin de partie — déclenché par status Firebase */}
-      {game.status === 'ended' && <FinDePartie />}
+      {game.status === 'ended' && <FinDePartie isHost={isHost} />}
     </div>
   )
 }

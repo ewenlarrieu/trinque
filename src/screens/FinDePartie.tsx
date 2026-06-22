@@ -81,7 +81,7 @@ const PHRASES = [
 
 // ── Écran ─────────────────────────────────────────────────────────────────────
 
-export default function FinDePartie() {
+export default function FinDePartie({ isHost = false }: { isHost?: boolean }) {
   const gameCode  = useGameStore((s) => s.gameCode)
   const resetGame = useGameStore((s) => s.resetGame)
   const navigate  = useNavigate()
@@ -183,15 +183,30 @@ export default function FinDePartie() {
             gap:           10,
           }}
         >
-          <Button
-            variant="party"
-            size="lg"
-            block
-            iconLeft={<RotateCcw size={20} />}
-            onClick={handleReplay}
-          >
-            Rejouer
-          </Button>
+          {isHost ? (
+            <Button
+              variant="party"
+              size="lg"
+              block
+              iconLeft={<RotateCcw size={20} />}
+              onClick={handleReplay}
+            >
+              Rejouer
+            </Button>
+          ) : (
+            <p
+              style={{
+                textAlign:  'center',
+                fontSize:   'var(--text-sm)',
+                color:      'var(--text-tertiary)',
+                fontFamily: 'var(--font-body)',
+                padding:    '12px 0',
+                margin:     0,
+              }}
+            >
+              En attente que l'hôte relance la partie…
+            </p>
+          )}
           <Button
             variant="ghost"
             size="lg"
