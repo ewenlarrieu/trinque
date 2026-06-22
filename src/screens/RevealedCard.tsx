@@ -13,14 +13,15 @@ interface RevealedCardProps {
   card:    Card
   rule:    RankRule
   onNext:  () => void
-  canNext: boolean   // seul le joueur courant peut passer au tour suivant
+  canNext: boolean
+  round:   number
 }
 
 const reducedMotion =
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export default function RevealedCard({ card, rule, onNext, canNext }: RevealedCardProps) {
+export default function RevealedCard({ card, rule, onNext, canNext, round }: RevealedCardProps) {
   // false = rotateY 90° (caché), true = rotateY 0° (visible)
   // Avec reduced-motion : démarre directement visible, pas d'animation
   const [flipped, setFlipped] = useState(reducedMotion)
@@ -89,7 +90,7 @@ export default function RevealedCard({ card, rule, onNext, canNext }: RevealedCa
           onBack={canNext ? onNext : undefined}
           right={
             <Badge tone="rose" fill="solid">
-              Manche 1
+              Manche {round}
             </Badge>
           }
         />

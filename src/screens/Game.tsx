@@ -24,6 +24,7 @@ interface FbGame {
   deckPosition:     number
   currentTurnIndex: number
   drawnCardIndex:   number | null
+  round:            number
   players:          Record<string, FbPlayer>
 }
 
@@ -58,6 +59,7 @@ export default function Game() {
     .map(([pid, data]) => ({ id: pid, pseudo: data.pseudo, isHost: data.isHost }))
 
   const isHost        = game?.hostId === myPlayerId
+  const round         = game?.round ?? 1
   const currentPlayer = players[currentTurnIndex % Math.max(players.length, 1)]
   const isMyTurn      = currentPlayer?.id === myPlayerId
   const drawnCard     = drawnCardIndex !== null ? (deck[drawnCardIndex] ?? null) : null
@@ -169,7 +171,7 @@ export default function Game() {
       >
         {/* Header */}
         <Header
-          title="Manche 1"
+          title={`Manche ${round}`}
           onBack={handleBack}
           right={
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -281,6 +283,7 @@ export default function Game() {
           rule={ruleFor(drawnCard)}
           onNext={handleNextTurn}
           canNext={isMyTurn}
+          round={round}
         />
       )}
 

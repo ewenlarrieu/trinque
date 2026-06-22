@@ -24,6 +24,7 @@ interface FirebaseGame {
   hostId:    string
   status:    'lobby' | 'playing' | 'ended'
   createdAt: number
+  round:     number
   players:   Record<string, FirebasePlayer>
 }
 
@@ -81,6 +82,7 @@ export default function Lobby() {
       deckPosition:     0,
       currentTurnIndex: 0,
       drawnCardIndex:   null,
+      round:            (game?.round ?? 0) + 1,
     })
   }
 
