@@ -65,6 +65,29 @@ export default function Game() {
 
   // ── Actions Firebase ──────────────────────────────────────────────────────
 
+  const handleBack = async () => {
+    if (code && players.length > 0) {
+      const myIndex = players.findIndex((p) => p.id === myPlayerId)
+      const updates: Record<string, unknown> = {
+        [`players/${myPlayerId}`]: null,
+      }
+      if (players.length > 1) {
+        let newTurnIndex = currentTurnIndex
+        if (currentTurnIndex === myIndex) {
+          // C'est mon tour : passer au suivant dans la liste réduite
+          newTurnIndex = myIndex % (players.length - 1)
+        } else if (currentTurnIndex > myIndex) {
+          // Mon slot était avant le joueur courant : décaler d'un cran
+          newTurnIndex = currentTurnIndex - 1
+        }
+        updates['currentTurnIndex'] = newTurnIndex
+        updates['drawnCardIndex'] = null
+      }
+      await update(ref(db, `games/${code}`), updates)
+    }
+    navigate('/')
+  }
+
   const handleDraw = async () => {
     if (!isMyTurn || drawnCardIndex !== null || deckPosition >= deck.length) return
     await update(ref(db, `games/${code}`), {
@@ -147,7 +170,7 @@ export default function Game() {
         {/* Header */}
         <Header
           title="Manche 1"
-          onBack={() => navigate(`/lobby/${code ?? gameCode}`)}
+          onBack={handleBack}
           right={
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Badge tone="violet">
