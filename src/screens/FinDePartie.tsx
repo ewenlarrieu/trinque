@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RotateCcw, LogOut } from 'lucide-react'
+import { ref, remove } from 'firebase/database'
+import { db } from '../lib/firebase'
 import { useGameStore } from '../store/game'
 import { Backdrop } from '../components/ui/Backdrop'
 import { Button } from '../components/ui/Button'
@@ -82,9 +84,10 @@ const PHRASES = [
 // ── Écran ─────────────────────────────────────────────────────────────────────
 
 export default function FinDePartie({ isHost = false }: { isHost?: boolean }) {
-  const gameCode  = useGameStore((s) => s.gameCode)
-  const resetGame = useGameStore((s) => s.resetGame)
-  const navigate  = useNavigate()
+  const gameCode    = useGameStore((s) => s.gameCode)
+  const myPlayerId  = useGameStore((s) => s.myPlayerId)
+  const resetGame   = useGameStore((s) => s.resetGame)
+  const navigate    = useNavigate()
   const { play }  = useSound()
 
   const [phrase] = useState(
@@ -97,7 +100,14 @@ export default function FinDePartie({ isHost = false }: { isHost?: boolean }) {
     navigate(`/lobby/${gameCode}`)
   }
 
-  const handleQuit = () => {
+  const handleQuit = async () => {
+    if (gameCode) {
+      if (isHost) {
+        await remove(ref(db, `games/${gameCode}`))
+      } else {
+        await remove(ref(db, `games/${gameCode}/players/${myPlayerId}`))
+      }
+    }
     resetGame()
     navigate('/')
   }
