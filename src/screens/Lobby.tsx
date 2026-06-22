@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Play } from 'lucide-react'
-import { ref, onValue, update } from 'firebase/database'
+import { ref, onValue, update, remove } from 'firebase/database'
 import { db } from '../lib/firebase'
 import { useGameStore, type Player } from '../store/game'
 import { freshDeck } from '../data/deck'
@@ -58,6 +58,19 @@ export default function Lobby() {
     .map(([pid, data]) => ({ id: pid, pseudo: data.pseudo, isHost: data.isHost }))
 
   const isHost = !!game && game.hostId === myPlayerId
+
+  const handleBack = async () => {
+    if (code) {
+      if (isHost) {
+        // L'hôte quitte → supprime toute la partie
+        await remove(ref(db, `games/${code}`))
+      } else {
+        // Joueur normal → supprime seulement son entrée
+        await remove(ref(db, `games/${code}/players/${myPlayerId}`))
+      }
+    }
+    navigate('/')
+  }
 
   const handleStart = async () => {
     if (!code) return
@@ -129,7 +142,7 @@ export default function Lobby() {
       >
         <Header
           title="Le salon"
-          onBack={() => navigate('/')}
+          onBack={handleBack}
           right={
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Badge tone="success">En ligne</Badge>

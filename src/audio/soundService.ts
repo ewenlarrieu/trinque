@@ -1,3 +1,11 @@
+// Utilise des éléments <audio> natifs plutôt que Web Audio API.
+// Le décodeur média du navigateur accepte tous les formats courants (MP3,
+// WAV, OGG, AAC…) sans nécessiter decodeAudioData.
+//
+// Déverrouillage autoplay iOS : au premier pointerdown, on lance un
+// play()+pause() immédiat sur chaque élément pour "débloquer" la politique
+// autoplay — les play() ultérieurs (même depuis un setTimeout) fonctionnent.
+
 export type SfxName = 'click' | 'flip' | 'special' | 'start'
 
 const MUTE_KEY = 'trinque-mute'
@@ -16,100 +24,50 @@ const VOLUMES: Record<SfxName, number> = {
   start:   0.60,
 }
 
-let _ctx: AudioContext | null = null
-const _buffers   = new Map<SfxName, AudioBuffer>()
-const _rawBytes  = new Map<SfxName, ArrayBuffer>()
+// Créer les éléments dès le chargement du module → preload en arrière-plan
+const _els: Record<SfxName, HTMLAudioElement> = {} as Record<SfxName, HTMLAudioElement>
 
-function getCtx(): AudioContext {
-  if (!_ctx) _ctx = new AudioContext()
-  return _ctx
-}
+;(Object.keys(SFX_URLS) as SfxName[]).forEach((name) => {
+  const el = new Audio(SFX_URLS[name])
+  el.preload = 'auto'
+  el.volume = VOLUMES[name]
+  _els[name] = el
+})
 
-// ── Phase 1 : fetch des bytes au chargement du module ────────────────────────
-// Le fetch ne nécessite PAS de geste utilisateur — on commence tout de suite.
-async function prefetch(name: SfxName): Promise<void> {
-  try {
-    const res = await fetch(SFX_URLS[name])
-    if (!res.ok) {
-      console.warn(`[TRINQUE sfx] ${name}: HTTP ${res.status} — fichier introuvable dans public/sfx/`)
-      return
-    }
-    _rawBytes.set(name, await res.arrayBuffer())
-    // Si le contexte est déjà prêt (geste précédent), décoder immédiatement
-    if (_ctx && _ctx.state === 'running') void decode(name)
-  } catch (err) {
-    console.warn(`[TRINQUE sfx] ${name}: fetch échoué`, err)
+// ── Déverrouillage iOS / Android ─────────────────────────────────────────────
+// Un play()+pause() dans un geste utilisateur "débloque" l'élément pour
+// les play() futurs (y compris hors geste, ex. setTimeout).
+let _unlocked = false
+
+function unlockAll(): void {
+  if (_unlocked) return
+  _unlocked = true
+  for (const name of Object.keys(_els) as SfxName[]) {
+    const el = _els[name]
+    el.play()
+      .then(() => { el.pause(); el.currentTime = 0 })
+      .catch(() => {})
   }
 }
 
-;(Object.keys(SFX_URLS) as SfxName[]).forEach((n) => void prefetch(n))
-
-// ── Phase 2 : décodage (nécessite un AudioContext) ───────────────────────────
-async function decode(name: SfxName): Promise<void> {
-  if (_buffers.has(name)) return
-  const raw = _rawBytes.get(name)
-  if (!raw) return
-  try {
-    // .slice() évite le "detached ArrayBuffer" si decode est appelé plusieurs fois
-    const buf = await getCtx().decodeAudioData(raw.slice(0))
-    _buffers.set(name, buf)
-  } catch (err) {
-    console.warn(`[TRINQUE sfx] ${name}: decode échoué`, err)
-  }
-}
-
-async function decodeAll(): Promise<void> {
-  for (const name of Object.keys(SFX_URLS) as SfxName[]) {
-    await decode(name)
-  }
-}
-
-// ── Déverrouillage au premier geste utilisateur ───────────────────────────────
 if (typeof document !== 'undefined') {
   const handler = () => {
-    if (!_ctx) _ctx = new AudioContext()
-    else if (_ctx.state === 'suspended') void _ctx.resume()
-    void decodeAll()
+    unlockAll()
     document.removeEventListener('pointerdown', handler, true)
   }
   document.addEventListener('pointerdown', handler, true)
 }
 
 export function unlockAudio(): void {
-  if (!_ctx) {
-    _ctx = new AudioContext()
-    void decodeAll()
-  } else if (_ctx.state === 'suspended') {
-    void _ctx.resume()
-  }
+  unlockAll()
 }
 
 export function playSound(name: SfxName): void {
   if (isMuted()) return
-  const buf = _buffers.get(name)
-  if (!buf) return
-  const c = getCtx()
-
-  const doPlay = () => {
-    try {
-      const src = c.createBufferSource()
-      src.buffer = buf
-      const gain = c.createGain()
-      gain.gain.value = VOLUMES[name]
-      src.connect(gain)
-      gain.connect(c.destination)
-      src.start(0)
-    } catch (err) {
-      console.warn(`[TRINQUE sfx] ${name}: playback échoué`, err)
-    }
-  }
-
-  if (c.state === 'running') {
-    doPlay()
-  } else {
-    // Bug 2 fix : resume() est async, on joue APRÈS qu'il soit résolu
-    c.resume().then(doPlay).catch(() => {})
-  }
+  const el = _els[name]
+  // Revenir au début pour permettre les rappels rapides (ex. clicks répétés)
+  el.currentTime = 0
+  el.play().catch(() => {})
 }
 
 export function isMuted(): boolean {
