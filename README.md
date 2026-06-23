@@ -1,73 +1,51 @@
-# React + TypeScript + Vite
+# TRINQUE 🍻
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Jeu de cartes à boire multijoueur en temps réel, jouable depuis n'importe quel téléphone sans installation.
 
-Currently, two official plugins are available:
+**[Jouer sur trinque.netlify.app](https://trinque.netlify.app)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## C'est quoi ?
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+TRINQUE est un jeu de soirée inspiré de Kings Cup. Un deck de 52 cartes, chaque rang a une règle. Les joueurs piochent à tour de rôle et tout le monde voit la carte en temps réel sur son téléphone.
 
-## Expanding the ESLint configuration
+- Crée une partie → partage le code à tes amis
+- Ils rejoignent depuis leur téléphone, pas besoin de compte
+- L'hôte lance la partie, les cartes sont synchronisées pour tout le monde
+- En fin de manche, l'hôte peut relancer une nouvelle manche
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Stack technique
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **React + TypeScript** — Vite
+- **Tailwind CSS v4** — design system TRINQUE (violet nuit, Fredoka, Outfit)
+- **Firebase Realtime Database** — sync temps réel entre joueurs
+- **Firebase Auth anonyme** — pas de compte requis
+- **PWA** — installable sur iOS et Android
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Lancer en local
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Crée un fichier `.env` à la racine (voir `.env.example`) avec tes clés Firebase.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Règles des cartes
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| Carte | Règle |
+|-------|-------|
+| As | La pyramide — distribue 5 gorgées comme tu veux |
+| 2 | Pour toi — distribue 2 gorgées |
+| 3 | Pour moi — tu bois 3 gorgées |
+| 4 | Par terre — dernier à toucher le sol boit |
+| 5 | Les gars — tous les mecs boivent |
+| 6 | Les filles — toutes les filles boivent |
+| 7 | Le ciel — dernier à lever la main boit |
+| 8 | Le binôme — tu choisis un partenaire de boisson |
+| 9 | La rime — jeu de rimes, premier bloqué boit |
+| 10 | La catégorie — jeu de catégorie, premier bloqué boit |
+| Valet | Règle perso — invente un geste secret |
+| Dame | Questions — tu deviens maître des questions |
+| Roi | La règle — invente une règle pour la soirée |
