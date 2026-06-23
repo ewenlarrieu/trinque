@@ -6,7 +6,6 @@ import { db } from '../lib/firebase'
 import { useGameStore } from '../store/game'
 import { Backdrop } from '../components/ui/Backdrop'
 import { Button } from '../components/ui/Button'
-import { useSound } from '../audio/useSound'
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
 
@@ -92,13 +91,9 @@ interface FinDePartieProps {
 export default function FinDePartie({ isHost, gameCode, myPlayerId }: FinDePartieProps) {
   const resetGame = useGameStore((s) => s.resetGame)
   const navigate  = useNavigate()
-  const { play }  = useSound()
-
   const [phrase] = useState(
     () => PHRASES[Math.floor(Math.random() * PHRASES.length)],
   )
-
-  useEffect(() => { play('special') }, [])
 
   const handleReplay = () => {
     navigate(`/lobby/${gameCode}`)

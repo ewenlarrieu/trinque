@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { type Card, type RankRule } from '../data/deck'
-import { useSound } from '../audio/useSound'
 import { Backdrop } from '../components/ui/Backdrop'
 import { Header } from '../components/ui/Header'
 import { Badge } from '../components/ui/Badge'
@@ -25,12 +24,7 @@ export default function RevealedCard({ card, rule, onNext, canNext, round }: Rev
   // false = rotateY 90° (caché), true = rotateY 0° (visible)
   // Avec reduced-motion : démarre directement visible, pas d'animation
   const [flipped, setFlipped] = useState(reducedMotion)
-  const { play } = useSound()
 
-  // Son à jouer selon le rang : fanfare pour Roi / As, whoosh sinon
-  const sfx = card.rank === 'K' || card.rank === 'A' ? 'special' : 'flip'
-
-  // Bloquer le scroll de l'arrière-plan tant que l'overlay est monté
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -39,20 +33,11 @@ export default function RevealedCard({ card, rule, onNext, canNext, round }: Rev
     }
   }, [])
 
-  // Déclencher le flip (et le son) à chaque nouvelle carte
   useEffect(() => {
-    if (reducedMotion) {
-      play(sfx)
-      return
-    }
+    if (reducedMotion) return
     setFlipped(false)
-    const t = setTimeout(() => {
-      setFlipped(true)
-      play(sfx)
-    }, 30)
+    const t = setTimeout(() => setFlipped(true), 30)
     return () => clearTimeout(t)
-  // play est stable (useCallback), sfx dépend de card.rank
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id])
 
   return (

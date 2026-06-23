@@ -12,7 +12,6 @@ import { Button } from '../components/ui/Button'
 import { MuteButton } from '../components/ui/MuteButton'
 import { GameCode } from '../components/ui/GameCode'
 import { PlayerChip } from '../components/ui/PlayerChip'
-import { useSound } from '../audio/useSound'
 
 interface FirebasePlayer {
   pseudo:   string
@@ -32,8 +31,6 @@ export default function Lobby() {
   const { code }       = useParams<{ code: string }>()
   const myPlayerId     = useGameStore((s) => s.myPlayerId)
   const navigate       = useNavigate()
-  const { play }       = useSound()
-
   const [game, setGame]       = useState<FirebaseGame | null>(null)
   const [loading, setLoading] = useState(true)
   const navigatedRef          = useRef(false)
@@ -75,7 +72,6 @@ export default function Lobby() {
 
   const handleStart = async () => {
     if (!code) return
-    play('start')
     await update(ref(db, `games/${code}`), {
       status:           'playing',
       deck:             freshDeck(),
