@@ -1,32 +1,26 @@
 // TRINQUE — Le deck de 52 cartes.
 // La règle dépend du RANG (pas de la couleur), façon Kings Cup / Picolo.
-// Copie ce fichier dans src/data/deck.ts
 
 export type Suit = '♠' | '♥' | '♦' | '♣';
 export type Rank =
   | 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
 
 export interface RankRule {
-  /** Titre court affiché en haut de la carte révélée. */
   titre: string;
-  /** La règle / le défi, en français, ton TRINQUE. */
   regle: string;
 }
 
 export interface Card {
-  id: string;        // ex. "K♠"
+  id: string;
   rank: Rank;
   suit: Suit;
-  /** Couleur d'affichage du symbole : rouge pour ♥♦, noir pour ♠♣. */
   color: 'red' | 'black';
 }
 
-/** La règle associée à chaque rang. */
 export const RULES: Record<Rank, RankRule> = {
   A: {
     titre: 'As · La pyramide',
-    regle:
-      'Tu distribues 5 gorgées, réparties comme tu veux entre autant de personnes que tu veux.',
+    regle: 'Tu distribues 5 gorgées, réparties comme tu veux entre autant de personnes que tu veux.',
   },
   '2': {
     titre: 'Deux · Pour toi',
@@ -38,8 +32,7 @@ export const RULES: Record<Rank, RankRule> = {
   },
   '4': {
     titre: 'Quatre · Par terre',
-    regle:
-      'Le dernier à toucher le sol avec la main boit 2 gorgées.',
+    regle: 'Le dernier à toucher le sol avec la main boit 2 gorgées.',
   },
   '5': {
     titre: 'Cinq · Les gars',
@@ -51,45 +44,37 @@ export const RULES: Record<Rank, RankRule> = {
   },
   '7': {
     titre: 'Sept · Le ciel',
-    regle:
-      'Lève la main vers le ciel ! Le dernier à le faire boit 2 gorgées.',
+    regle: 'Lève la main vers le ciel ! Le dernier à le faire boit 2 gorgées.',
   },
   '8': {
     titre: 'Huit · Le binôme',
-    regle:
-      'Choisis un binôme. À chaque fois que tu bois jusqu’à la fin de la partie, ton binôme boit aussi.',
+    regle: 'Choisis un binôme. À chaque fois que tu bois jusqu’à la fin de la partie, ton binôme boit aussi.',
   },
   '9': {
     titre: 'Neuf · La rime',
-    regle:
-      'Dis un mot. Chacun à son tour doit trouver une rime. Le premier qui bloque boit 2 gorgées.',
+    regle: 'Dis un mot. Chacun à son tour doit trouver une rime. Le premier qui bloque boit 3 gorgées.',
   },
   '10': {
     titre: 'Dix · La catégorie',
-    regle:
-      'Annonce une catégorie (ex. marques de voiture, pays, prénoms…). Chacun dit à son tour un mot qui appartient à cette catégorie. Le premier qui bloque ou répète boit.',
+    regle: 'Annonce une catégorie (ex. marques de voiture, pays, prénoms…). Chacun dit à son tour un mot qui appartient à cette catégorie. Le premier qui bloque ou répète boit 5 gorgées.',
   },
   J: {
     titre: 'Valet · Règle perso',
-    regle:
-      'Invente un geste secret. Quand tu le fais, le dernier à le copier boit. Valable jusqu’à la fin.',
+    regle: 'Invente un geste secret. Quand tu le fais, le dernier à le copier boit 3 gorgées. Valable jusqu’à la fin.',
   },
   Q: {
     titre: 'Dame · Questions',
-    regle:
-      'Tu deviens maître des questions. Si quelqu’un répond à une de tes questions, il boit. Jusqu’à la prochaine Dame.',
+    regle: 'Tu deviens maître des questions. Si quelqu’un répond à une de tes questions, il boit. Jusqu’à la prochaine Dame.',
   },
   K: {
     titre: 'Roi · La règle',
-    regle:
-      'Invente une règle que tout le monde doit suivre jusqu’à la fin de la partie ! (ex. interdit de dire « boire »).',
+    regle: 'Invente une règle que tout le monde doit suivre jusqu’à la fin de la partie (ex. interdit de dire « boire »). Quiconque l’enfreint boit 3 gorgées.',
   },
 };
 
 const SUITS: Suit[] = ['♠', '♥', '♦', '♣'];
 const RANKS: Rank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-/** Construit un deck de 52 cartes, ordonné. */
 export function buildDeck(): Card[] {
   const deck: Card[] = [];
   for (const suit of SUITS) {
@@ -105,7 +90,6 @@ export function buildDeck(): Card[] {
   return deck;
 }
 
-/** Mélange (Fisher-Yates) — renvoie une nouvelle liste. */
 export function shuffle<T>(input: T[]): T[] {
   const a = [...input];
   for (let i = a.length - 1; i > 0; i--) {
@@ -115,12 +99,10 @@ export function shuffle<T>(input: T[]): T[] {
   return a;
 }
 
-/** Un deck mélangé prêt à jouer. */
 export function freshDeck(): Card[] {
   return shuffle(buildDeck());
 }
 
-/** La règle d'une carte donnée. */
 export function ruleFor(card: Card): RankRule {
   return RULES[card.rank];
 }
