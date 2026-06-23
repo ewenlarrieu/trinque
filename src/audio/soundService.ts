@@ -26,7 +26,7 @@ if (typeof document !== 'undefined') {
 
 export function unlockAudio(): void { unlockAll() }
 
-export function playSound(name: SfxName): void {
+export function playSound(_name: SfxName): void {
   if (isMuted() || !el) return
   el.currentTime = 0
   el.play().catch(() => {})
