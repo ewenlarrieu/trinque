@@ -67,7 +67,7 @@ export const RULES: Record<Rank, RankRule> = {
   '10': {
     titre: 'Dix · La catégorie',
     regle:
-      'Choisis une catégorie (marques de bière, prénoms…). Chacun en cite une. Le premier qui bloque boit.',
+      'Annonce une catégorie (ex. marques de voiture, pays, prénoms…). Chacun dit à son tour un mot qui appartient à cette catégorie. Le premier qui bloque ou répète boit.',
   },
   J: {
     titre: 'Valet · Règle perso',
